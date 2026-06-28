@@ -32,4 +32,108 @@ Leave a star if you like the project! ⭐️
 </h5>
 
 > [!IMPORTANT]
-> Bustrap currently supports
+> Bustrap currently supports **Windows 10 and above**.  
+> **macOS support is in the works**, but it is not available yet.
+>
+> In the meantime, you can use **[AppleBlox](https://github.com/AppleBlox/appleblox)** *(for macOS)* or **[Sober](https://sober.vinegarhq.org/)** *(for Linux)*.  
+> More experienced Linux users can also try tools like **[Lution](https://github.com/wookhq/Lution)**.
+
+## Find Me
+1. **Roblox:** [@conshun](https://www.roblox.com/users/8657911604/profile)
+2. **YouTube:** [@thisbreadtic](https://www.youtube.com/@thisbreadtic)
+3. **Discord:** `braticlyyy`
+
+## Installation
+
+1. Download the latest version
+   👉 https://github.com/rustybusgaming/Bustrap/releases/latest
+2. Run the Exe and Finish the setup
+3. Launch Bustrap
+4. Enjoy a more simple Roblox
+
+---
+
+## Frequently Asked Questions (FAQ)
+
+<details>
+  <summary><strong>Can it get you banned?</strong></summary>
+  <br>
+
+  No. Bustrap does not inject cheats, exploits, or bypass Roblox security.  
+  It functions as a launcher and configuration manager. However, as with any third-party tool, use it at your own discretion.
+</details>
+
+<br>
+
+<details>
+  <summary><strong>Is it a virus?</strong></summary>
+  <br>
+
+  No. Bustrap is fully open-source, meaning anyone can inspect the code.  
+  If your antivirus flags it, it is most likely a false positive due to how launchers interact with Roblox processes and updates.
+
+  You can verify the source code yourself at:
+  https://github.com/rustybusgaming/Bustrap
+  or just scroll up dummy
+</details>
+
+## How to Fork
+
+<p align="left">
+  <a href="https://www.w3schools.com/cs/" target="_blank" rel="noreferrer">
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/csharp/csharp-original.svg" alt="csharp" width="40" height="40"/>
+    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/dot-net/dot-net-original-wordmark.svg" alt="dotnet" width="40" height="40"/>
+  </a>
+</p>
+
+Bustrap is built using **C# and .NET**
+
+### Fork the Repository
+
+1. Go to:  
+   https://github.com/rustybusgaming/Bustrap
+2. Click **Fork** (top right)
+3. This creates your own copy under your GitHub account
+
+## Credits
+Built on top of [Bloxstrap](https://github.com/bloxstraplabs/bloxstrap) by pizzaboxer
+
+<table style="width: 100%; border-collapse: collapse;">
+  <tr>
+    <td style="width: 33%; text-align: left;">© Bustrap</td>
+    <td style="width: 33%; text-align: right;"><a href="https://github.com/rustybusgaming/Bustrap/blob/main/LICENSE.VOIDSTRAP" target="_blank">MIT</a></td>
+  </tr>
+</table>
+
+## Star History
+
+<p align="center">
+  <a href="https://www.star-history.com/?repos=rustybusgaming%2FBustrap&type=timeline&legend=top-left">
+    <img src="https://api.star-history.com/svg?repos=rustybusgaming%2FBustrap&type=timeline&legend=top-left&theme=dark" />
+  </a>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/rustybusgaming/Bustrap/output/github-contribution-grid-snake-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/rustybusgaming/Bustrap/output/github-contribution-grid-snake.svg">
+    <img alt="WH MY POOKIES" src="https://raw.githubusercontent.com/rustybusgaming/Bustrap/output/github-contribution-grid-snake.svg">
+  </picture>
+</p>
+
+<p align="center">
+  <a href="https://discord.gg/5tJBqBH8ck">
+    <img src="https://invidget.switchblade.xyz/5tJBqBH8ck">
+  </a>
+</p>
+
+[shield-repo-downloads]:  https://img.shields.io/github/downloads/rustybusgaming/Bustrap/latest/total?color=981bfe
+[shield-repo-total]:      https://img.shields.io/github/downloads/rustybusgaming/Bustrap/total?color=8a2be2
+[shield-repo-latest]:     https://img.shields.io/github/v/release/rustybusgaming/Bustrap?color=7a39fb
+[shield-repo-stars]:      https://img.shields.io/github/stars/rustybusgaming/Bustrap?color=ffd700
+[shield-discord-server]:  https://img.shields.io/discord/1327967202015580223?logo=discord&logoColor=white&label=Discord&color=4d3dff
+
+[repo-releases]:          https://github.com/rustybusgaming/Bustrap/releases
+[repo-latest]:            https://github.com/rustybusgaming/Bustrap/releases/latest
+[repo-stargazers]:        https://github.com/rustybusgaming/Bustrap/stargazers
+[discord-invite]:         https://discord.gg/dfA9PdWgcV
