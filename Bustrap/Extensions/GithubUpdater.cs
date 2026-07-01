@@ -8,6 +8,14 @@ using Bustrap;
 
 public static class GithubUpdater
 {
+    private static readonly string[] AllowedReleaseHosts = new[]
+    {
+        "api.github.com",
+        "github.com",
+        "objects.githubusercontent.com",
+        "releases.githubusercontent.com"
+    };
+
     private static readonly HttpClient http = new()
     {
         DefaultRequestHeaders = { { "User-Agent", "Bustrap-Updater" } }
@@ -62,6 +70,8 @@ public static class GithubUpdater
 
     private static async Task<bool> UpdateExe(string url, string name)
     {
+        SecurityHelpers.ValidateRemoteHttpsUrl(url, AllowedReleaseHosts);
+
         string tempDir = Path.Combine(Path.GetTempPath(), "Bustrap_Update");
         Directory.CreateDirectory(tempDir);
 
@@ -81,6 +91,8 @@ public static class GithubUpdater
 
     private static async Task<bool> UpdateZip(string url, string name)
     {
+        SecurityHelpers.ValidateRemoteHttpsUrl(url, AllowedReleaseHosts);
+
         string tempDir = Path.Combine(Path.GetTempPath(), "Bustrap_Update");
         Directory.CreateDirectory(tempDir);
 
@@ -90,7 +102,7 @@ public static class GithubUpdater
 
         string extractPath = Path.Combine(tempDir, "Extracted");
         if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
-        ZipFile.ExtractToDirectory(zipPath, extractPath, true);
+        ExtractZipSafely(zipPath, extractPath);
 
         string currentDir = AppContext.BaseDirectory;
         foreach (string file in Directory.GetFiles(extractPath, "*", SearchOption.AllDirectories))
@@ -104,6 +116,22 @@ public static class GithubUpdater
         string mainExe = Path.Combine(currentDir, "Bustrap.exe");
         RestartAfterUpdate(mainExe);
         return true;
+    }
+
+    private static void ExtractZipSafely(string zipPath, string extractPath)
+    {
+        Directory.CreateDirectory(extractPath);
+
+        using ZipArchive archive = ZipFile.OpenRead(zipPath);
+        foreach (ZipArchiveEntry entry in archive.Entries)
+        {
+            if (string.IsNullOrEmpty(entry.Name))
+                continue;
+
+            string destinationPath = SecurityHelpers.CombineUnderDirectory(extractPath, entry.FullName);
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+            entry.ExtractToFile(destinationPath, overwrite: true);
+        }
     }
 
     private static void RestartAfterUpdate(string exePath)

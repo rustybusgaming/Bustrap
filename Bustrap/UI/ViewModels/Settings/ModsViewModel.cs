@@ -1633,7 +1633,7 @@ namespace Bustrap.UI.ViewModels.Settings
                 if (entry.IsDirectory)
                     continue;
 
-                string filePath = Path.Combine(extractPath, entry.Name);
+                string filePath = SecurityHelpers.CombineUnderDirectory(extractPath, entry.Name);
 
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 

@@ -10,7 +10,6 @@ namespace Bustrap.Enums
         UltraGray,
         Berry,
         Blue,
-        Bustrap,
         Cyan,
         Green,
         Orange,

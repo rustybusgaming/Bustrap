@@ -15,6 +15,7 @@ namespace Bustrap.UI.Elements.Settings.Pages
         private readonly string githubZipUrl = "https://github.com/KloBraticc/This-is-for-Bustrap-Mobile-Support-its-the-installer/archive/refs/heads/main.zip";
         private readonly string extractedFolder;
         private readonly string remoteDesktopUrl = "https://remotedesktop.google.com/access";
+        private static readonly string[] AllowedMobileInstallerHosts = new[] { "github.com", "raw.githubusercontent.com" };
 
         public MobilePage()
         {
@@ -33,14 +34,7 @@ namespace Bustrap.UI.Elements.Settings.Pages
         {
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd",
-                    Arguments = $"/c start \"\" \"{remoteDesktopUrl}\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                };
-                Process.Start(psi);
+                Utilities.ShellExecute(remoteDesktopUrl);
 
                 Frontend.ShowMessageBox(
                     "After completing all the steps and setting up a remote device, open your tablet or phone and go to:\n" +
@@ -82,7 +76,7 @@ namespace Bustrap.UI.Elements.Settings.Pages
             if (Directory.Exists(extractedFolder))
                 Directory.Delete(extractedFolder, true);
 
-            ZipFile.ExtractToDirectory(zipPath, extractedFolder);
+            ExtractZipSafely(zipPath, extractedFolder);
 
             var batPath = Path.Combine(extractedFolder, "Installer.bat");
             if (!File.Exists(batPath))
@@ -94,6 +88,12 @@ namespace Bustrap.UI.Elements.Settings.Pages
                     return;
                 }
                 batPath = files[0];
+            }
+
+            if (!SecurityHelpers.IsPathUnderDirectory(batPath, extractedFolder))
+            {
+                StatusText.Text = "Blocked installer path outside extraction directory.";
+                return;
             }
 
             StatusText.Text = "Running Mobile Support Installer...";
@@ -134,9 +134,27 @@ namespace Bustrap.UI.Elements.Settings.Pages
 
         private async Task DownloadFileAsync(string url, string destination)
         {
+            Uri validatedUri = SecurityHelpers.ValidateRemoteHttpsUrl(url, AllowedMobileInstallerHosts);
+
             using HttpClient client = new HttpClient();
-            byte[] data = await client.GetByteArrayAsync(url);
+            byte[] data = await client.GetByteArrayAsync(validatedUri);
             await File.WriteAllBytesAsync(destination, data);
+        }
+
+        private void ExtractZipSafely(string zipPath, string destinationDirectory)
+        {
+            Directory.CreateDirectory(destinationDirectory);
+
+            using ZipArchive archive = ZipFile.OpenRead(zipPath);
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                if (string.IsNullOrEmpty(entry.Name))
+                    continue;
+
+                string destinationPath = SecurityHelpers.CombineUnderDirectory(destinationDirectory, entry.FullName);
+                Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                entry.ExtractToFile(destinationPath, overwrite: true);
+            }
         }
 
         private async Task RunBatchAndWaitAsync(string path)

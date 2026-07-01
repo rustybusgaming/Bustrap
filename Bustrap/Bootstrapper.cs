@@ -2012,7 +2012,11 @@ namespace Bustrap
                     if (string.IsNullOrEmpty(entry.Name)) continue;
 
                     var parts = entry.FullName.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-                    string dest = Path.Combine(PackFolder, Path.Combine(parts.Skip(1).ToArray()));
+                    if (parts.Length <= 1)
+                        continue;
+
+                    string relativePath = Path.Combine(parts.Skip(1).ToArray());
+                    string dest = SecurityHelpers.CombineUnderDirectory(PackFolder, relativePath);
                     Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 
                     using var es = entry.Open();

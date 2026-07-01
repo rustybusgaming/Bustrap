@@ -11,11 +11,32 @@ namespace Bustrap
     {
         public static void ShellExecute(string website)
         {
+            if (string.IsNullOrWhiteSpace(website))
+                throw new ArgumentException("Target cannot be empty.", nameof(website));
+
+            string target = website.Trim();
+
+            if (Uri.TryCreate(target, UriKind.Absolute, out Uri? uri))
+            {
+                bool isWeb = uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                    || uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
+                bool isFile = uri.Scheme.Equals(Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase);
+
+                if (!isWeb && !isFile)
+                    throw new InvalidOperationException($"Unsupported URI scheme: {uri.Scheme}");
+
+                target = uri.IsFile ? uri.LocalPath : uri.AbsoluteUri;
+            }
+            else
+            {
+                target = Path.GetFullPath(target);
+            }
+
             try
             {
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = website,
+                    FileName = target,
                     UseShellExecute = true
                 });
             }
@@ -24,10 +45,11 @@ namespace Bustrap
                 if (ex.NativeErrorCode != (int)ErrorCode.CO_E_APPNOTFOUND)
                     throw;
 
+                string escapedTarget = target.Replace("\"", "\"\"");
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "rundll32.exe",
-                    Arguments = $"shell32,OpenAs_RunDLL {website}"
+                    Arguments = $"shell32,OpenAs_RunDLL \"{escapedTarget}\""
                 });
             }
         }

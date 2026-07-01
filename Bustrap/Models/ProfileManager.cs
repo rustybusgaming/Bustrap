@@ -17,6 +17,7 @@ namespace Bustrap.Integrations
     {
         private const string NVIDIA_INSPECTOR_URL =
             "https://github.com/Orbmu2k/nvidiaProfileInspector/releases/download/2.4.0.34/nvidiaProfileInspector.zip";
+        private static readonly string[] AllowedInspectorHosts = new[] { "github.com", "objects.githubusercontent.com", "releases.githubusercontent.com" };
 
         private static readonly string InspectorDir =
             Path.Combine(Paths.Integrations, "Nvidia"); // was too lazy to add auto-update
@@ -237,6 +238,7 @@ namespace Bustrap.Integrations
             try
             {
                 Directory.CreateDirectory(InspectorDir);
+                SecurityHelpers.ValidateRemoteHttpsUrl(NVIDIA_INSPECTOR_URL, AllowedInspectorHosts);
 
                 SafeDelete(zipPath);
                 SafeDelete(tempZipPath);
@@ -258,7 +260,7 @@ namespace Bustrap.Integrations
                 }
 
                 await WaitForFileUnlock(tempZipPath);
-                ZipFile.ExtractToDirectory(tempZipPath, InspectorDir, true);
+                ExtractZipSafely(tempZipPath, InspectorDir);
                 SafeDelete(tempZipPath);
 
                 return File.Exists(InspectorExe);
@@ -272,6 +274,22 @@ namespace Bustrap.Integrations
                 SafeDelete(zipPath);
                 SafeDelete(tempZipPath);
                 return false;
+            }
+        }
+
+        private static void ExtractZipSafely(string zipPath, string destinationDirectory)
+        {
+            Directory.CreateDirectory(destinationDirectory);
+
+            using ZipArchive archive = ZipFile.OpenRead(zipPath);
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                if (string.IsNullOrEmpty(entry.Name))
+                    continue;
+
+                string destinationPath = SecurityHelpers.CombineUnderDirectory(destinationDirectory, entry.FullName);
+                Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                entry.ExtractToFile(destinationPath, overwrite: true);
             }
         }
 
