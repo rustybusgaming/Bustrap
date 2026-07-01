@@ -1,139 +1,136 @@
-<p align="center">
-<a href="https://bustrapp.netlify.app/">
-<img src="https://raw.githubusercontent.com/rustybusgaming/Bustrap/main/Images/Bustrap.png" alt="preview" width="100px"/>
-</a>
-</p>
-
-<h1 align="center"><b>Bustrap</b></h1>
-
-<p align="center">
-<img src="https://raw.githubusercontent.com/rustybusgaming/Bustrap/main/Images/BustrapTheme.png" alt="preview" width="100%"/>
-</p>
-
-<p align="center">
-  <a href="https://github.com/rustybusgaming/Bustrap/releases/latest">Latest release</a> |
-  <a href="https://www.youtube.com/watch?v=P-GqTUo_HIA&t">Tutorial</a> |
-  <a href="https://bustrapp.netlify.app/donate/donate">Donate</a> |
-  <a href="https://discord.gg/5tJBqBH8ck">Discord</a>
-</p>
-
 <div align="center">
 
-[![Total Downloads][shield-repo-total]][repo-releases]
-[![Latest Downloads][shield-repo-downloads]][repo-latest]
-[![Latest Release][shield-repo-latest]][repo-latest]
-[![Discord][shield-discord-server]][discord-invite]
-[![Stars][shield-repo-stars]][repo-stargazers]
+# 🚌 Bustrap
+
+**A modern, open-source custom launcher and configuration manager for Roblox.**
+
+[![Latest Release](https://img.shields.io/github/v/release/rustybusgaming/Bustrap?color=7a39fb&label=Latest%20Release)](https://github.com/rustybusgaming/Bustrap/releases/latest)
+[![Total Downloads](https://img.shields.io/github/downloads/rustybusgaming/Bustrap/total?color=8a2be2)](https://github.com/rustybusgaming/Bustrap/releases)
+[![Latest Downloads](https://img.shields.io/github/downloads/rustybusgaming/Bustrap/latest/total?color=981bfe)](https://github.com/rustybusgaming/Bustrap/releases/latest)
+[![Stars](https://img.shields.io/github/stars/rustybusgaming/Bustrap?color=ffd700)](https://github.com/rustybusgaming/Bustrap/stargazers)
+[![Discord](https://img.shields.io/discord/1327967202015580223?logo=discord&logoColor=white&label=Discord&color=4d3dff)](https://discord.gg/5tJBqBH8ck)
+
+<p align="center">
+  <a href="https://bustrapp.netlify.app/"><img src="https://raw.githubusercontent.com/rustybusgaming/Bustrap/main/Images/BustrapTheme.png" alt="Bustrap preview" width="100%"/></a>
+</p>
+
+[🌐 Website](https://bustrapp.netlify.app/) • [⬇️ Download](https://github.com/rustybusgaming/Bustrap/releases/latest) • [📺 Tutorial](https://www.youtube.com/watch?v=P-GqTUo_HIA) • [💖 Donate](https://bustrapp.netlify.app/donate/donate) • [💬 Discord](https://discord.gg/5tJBqBH8ck)
 
 </div>
 
-<h5 align="center">
-Leave a star if you like the project! ⭐️
-</h5>
+---
 
 > [!IMPORTANT]
-> Bustrap currently supports **Windows 10 and above**.  
-> **macOS support is in the works**, but it is not available yet.
+> Bustrap currently supports **Windows 10 and above**. macOS support is planned but not yet available.
 >
-> In the meantime, you can use **[AppleBlox](https://github.com/AppleBlox/appleblox)** *(for macOS)* or **[Sober](https://sober.vinegarhq.org/)** *(for Linux)*.  
-> More experienced Linux users can also try tools like **[Lution](https://github.com/wookhq/Lution)**.
-
-## Find Me
-1. **Roblox:** [@conshun](https://www.roblox.com/users/8657911604/profile)
-2. **YouTube:** [@thisbreadtic](https://www.youtube.com/@thisbreadtic)
-3. **Discord:** `braticlyyy`
-
-## Installation
-
-1. Download the latest version
-   👉 https://github.com/rustybusgaming/Bustrap/releases/latest
-2. Run the Exe and Finish the setup
-3. Launch Bustrap
-4. Enjoy a more simple Roblox
+> In the meantime:
+> - **macOS** → [AppleBlox](https://github.com/AppleBlox/appleblox)
+> - **Linux** → [Sober](https://sober.vinegarhq.org/) or [Lution](https://github.com/wookhq/Lution)
 
 ---
 
-## Frequently Asked Questions (FAQ)
+## 📖 About
+
+Bustrap is a custom bootstrapper for the Roblox client that gives you full control over how Roblox looks, feels, and launches — without injecting exploits or modifying the client in ways that risk your account.
+
+It builds on the solid foundation of [Bloxstrap](https://github.com/bloxstraplabs/bloxstrap) by pizzaboxer and layers on a refreshed UI, custom theming, and quality-of-life improvements.
+
+## ✨ Features
+
+- 🚀 **Custom bootstrapper** — launch and manage Roblox your way
+- 🎨 **Theming & UI tweaks** — personalize the look and feel
+- ⚙️ **Configuration manager** — settings that persist across updates
+- 🪟 **Windows 10/11 support** out of the box
+- 🔓 **Fully open source** — every line of code is on GitHub
+- 💬 **Active community** — support, suggestions, and discussion on Discord
+
+## 📦 Installation
+
+1. Download the latest release from the [Releases page](https://github.com/rustybusgaming/Bustrap/releases/latest).
+2. Run the installer and complete the setup.
+3. Launch Bustrap.
+4. Enjoy a cleaner, more configurable Roblox.
+
+> [!TIP]
+> If Windows SmartScreen blocks the installer, click **More info → Run anyway**. Bustrap is open source and safe — see the FAQ below.
+
+## ❓ FAQ
 
 <details>
-  <summary><strong>Can it get you banned?</strong></summary>
-  <br>
-
-  No. Bustrap does not inject cheats, exploits, or bypass Roblox security.  
-  It functions as a launcher and configuration manager. However, as with any third-party tool, use it at your own discretion.
-</details>
-
+<summary><strong>Can Bustrap get me banned on Roblox?</strong></summary>
 <br>
 
-<details>
-  <summary><strong>Is it a virus?</strong></summary>
-  <br>
-
-  No. Bustrap is fully open-source, meaning anyone can inspect the code.  
-  If your antivirus flags it, it is most likely a false positive due to how launchers interact with Roblox processes and updates.
-
-  You can verify the source code yourself at:
-  https://github.com/rustybusgaming/Bustrap
-  or just scroll up dummy
+No. Bustrap does not inject cheats, exploits, or bypass Roblox security. It functions as a launcher and configuration manager. As with any third-party tool, use it at your own discretion.
 </details>
 
-## How to Fork
+<details>
+<summary><strong>Is Bustrap a virus?</strong></summary>
+<br>
 
-<p align="left">
-  <a href="https://www.w3schools.com/cs/" target="_blank" rel="noreferrer">
-    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/csharp/csharp-original.svg" alt="csharp" width="40" height="40"/>
-    <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/dot-net/dot-net-original-wordmark.svg" alt="dotnet" width="40" height="40"/>
-  </a>
-</p>
+No. Bustrap is fully open source, so anyone can inspect the code on GitHub. If your antivirus flags it, it is most likely a false positive caused by how launchers interact with Roblox processes and updates. You can verify the source code at [github.com/rustybusgaming/Bustrap](https://github.com/rustybusgaming/Bustrap).
+</details>
 
-Bustrap is built using **C# and .NET**
+<details>
+<summary><strong>Which platforms are supported?</strong></summary>
+<br>
 
-### Fork the Repository
+Windows 10 and above is the only officially supported platform today. macOS support is in progress. For macOS, see [AppleBlox](https://github.com/AppleBlox/appleblox); for Linux, see [Sober](https://sober.vinegarhq.org/).
+</details>
 
-1. Go to:  
-   https://github.com/rustybusgaming/Bustrap
-2. Click **Fork** (top right)
-3. This creates your own copy under your GitHub account
+<details>
+<summary><strong>Where can I get help?</strong></summary>
+<br>
 
-## Credits
-Built on top of [Bloxstrap](https://github.com/bloxstraplabs/bloxstrap) by pizzaboxer
+Join the [Bustrap Discord](https://discord.gg/5tJBqBH8ck) for support, bug reports, and feature requests.
+</details>
 
-<table style="width: 100%; border-collapse: collapse;">
-  <tr>
-    <td style="width: 33%; text-align: left;">© Bustrap</td>
-    <td style="width: 33%; text-align: right;"><a href="https://github.com/rustybusgaming/Bustrap/blob/main/LICENSE.VOIDSTRAP" target="_blank">MIT</a></td>
-  </tr>
-</table>
+## 🛠️ Built With
 
-## Star History
+- **C#** & **.NET** (WPF + [WPF UI](https://wpfui.lepo.co/))
 
-<p align="center">
-  <a href="https://www.star-history.com/?repos=rustybusgaming%2FBustrap&type=timeline&legend=top-left">
-    <img src="https://api.star-history.com/svg?repos=rustybusgaming%2FBustrap&type=timeline&legend=top-left&theme=dark" />
-  </a>
-</p>
+## 🔧 Building from Source
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/rustybusgaming/Bustrap/output/github-contribution-grid-snake-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/rustybusgaming/Bustrap/output/github-contribution-grid-snake.svg">
-    <img alt="WH MY POOKIES" src="https://raw.githubusercontent.com/rustybusgaming/Bustrap/output/github-contribution-grid-snake.svg">
-  </picture>
-</p>
+1. Install the [.NET 8 SDK](https://dotnet.microsoft.com/download).
+2. Clone the repository (with submodules):
+   ```bash
+   git clone --recurse-submodules https://github.com/rustybusgaming/Bustrap.git
+   ```
+3. Open `Voidstrap.sln` in Visual Studio 2022 (or newer).
+4. Restore packages and build the solution.
 
-<p align="center">
-  <a href="https://discord.gg/5tJBqBH8ck">
-    <img src="https://invidget.switchblade.xyz/5tJBqBH8ck">
-  </a>
-</p>
+> If you cloned without `--recurse-submodules`, run `git submodule update --init --recursive` inside the repo.
 
-[shield-repo-downloads]:  https://img.shields.io/github/downloads/rustybusgaming/Bustrap/latest/total?color=981bfe
-[shield-repo-total]:      https://img.shields.io/github/downloads/rustybusgaming/Bustrap/total?color=8a2be2
-[shield-repo-latest]:     https://img.shields.io/github/v/release/rustybusgaming/Bustrap?color=7a39fb
-[shield-repo-stars]:      https://img.shields.io/github/stars/rustybusgaming/Bustrap?color=ffd700
-[shield-discord-server]:  https://img.shields.io/discord/1327967202015580223?logo=discord&logoColor=white&label=Discord&color=4d3dff
+## 🤝 Contributing
 
-[repo-releases]:          https://github.com/rustybusgaming/Bustrap/releases
-[repo-latest]:            https://github.com/rustybusgaming/Bustrap/releases/latest
-[repo-stargazers]:        https://github.com/rustybusgaming/Bustrap/stargazers
-[discord-invite]:         https://discord.gg/dfA9PdWgcV
+Contributions are welcome! Feel free to:
+
+- 🐛 [Open an issue](https://github.com/rustybusgaming/Bustrap/issues) for bugs or feature ideas
+- 🍴 Fork the repo and submit a pull request
+- 💬 Hang out in the [Discord](https://discord.gg/5tJBqBH8ck) to discuss ideas
+
+## 🌟 Credits
+
+- Built on top of [Bloxstrap](https://github.com/bloxstraplabs/bloxstrap) by **pizzaboxer** — the original project this work is forked from.
+- Thanks to everyone who has starred ⭐, reported bugs, and contributed.
+
+## 📬 Find Me
+
+- 🎮 **Roblox:** [@conshun](https://www.roblox.com/users/8657911604/profile)
+- 📺 **YouTube:** [@thisbreadtic](https://www.youtube.com/@thisbreadtic)
+- 💬 **Discord:** `braticlyyy`
+
+## 📜 License
+
+This project is licensed under the **MIT License** — see [`LICENSE.BLOXSTRAP`](LICENSE.BLOXSTRAP) for details.
+
+---
+
+<div align="center">
+
+⭐ **Leave a star if you like the project!** ⭐
+
+<a href="https://www.star-history.com/?repos=rustybusgaming%2FBustrap&type=timeline&legend=top-left">
+  <img src="https://api.star-history.com/svg?repos=rustybusgaming%2FBustrap&type=timeline&legend=top-left&theme=dark" alt="Star History" />
+</a>
+
+</div>
