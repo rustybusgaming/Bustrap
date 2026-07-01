@@ -1,13 +1,13 @@
 <p align="center">
 <a href="https://bustrapp.netlify.app/">
-<img src="https://raw.githubusercontent.com/rustybusgaming/Bustrap/main/Bloxstrap/Bustrap.png" alt="preview" width="100px"/>
+<img src="https://raw.githubusercontent.com/rustybusgaming/Bustrap/main/Images/Bustrap.png" alt="preview" width="100px"/>
 </a>
 </p>
 
 <h1 align="center"><b>Bustrap</b></h1>
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/KloBraticc/RandomMods/main/Untitled%20design%20(2)-Photoroom.png" alt="preview" width="100%"/>
+<img src="https://raw.githubusercontent.com/rustybusgaming/Bustrap/main/Images/BustrapTheme.png" alt="preview" width="100%"/>
 </p>
 
 <p align="center">

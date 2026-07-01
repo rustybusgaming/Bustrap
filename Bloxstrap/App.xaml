@@ -16,6 +16,7 @@
                 <ResourceDictionary Source="UI/Style/Dark.xaml" />
                 <!--  NOTE: WpfUiWindow::ApplyTheme relies on this order.  -->
                 <ResourceDictionary Source="UI/Style/Default.xaml" />
+                <ResourceDictionary Source="UI/Style/Bustrap.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <FontFamily x:Key="Rubik">pack://application:,,,/Resources/Fonts/#Rubik Light</FontFamily>

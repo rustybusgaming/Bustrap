@@ -60,6 +60,8 @@
 
 	<ItemGroup>
 		<Resource Include="Voidstrap.ico" />
+		<Resource Include="Voidstrap.png" />
+		<EmbeddedResource Include="ThemeImages\BustrapTheme.png" />
 		<Resource Include="Resources\Checkmark.ico" />
 		<Resource Include="Resources\CrossMark.ico" />
 		<Resource Include="Resources\Fonts\NotoSansThai-VariableFont_wdth,wght.ttf" />
