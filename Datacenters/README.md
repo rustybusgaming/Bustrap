@@ -2,7 +2,7 @@
 
 ## What it is
 
-A list of Roblox's own server IP ranges, all sitting inside 128.116.x.x, with each /24 chunk mapped to the city, region, country, and coordinates of the datacenter it actually runs out of. This is what the Voidstrap Matchmaker reads to figure out where a server really is before deciding whether to join it
+A list of Roblox's own server IP ranges, all sitting inside 128.116.x.x, with each /24 chunk mapped to the city, region, country, and coordinates of the datacenter it actually runs out of. This is what the Bustrap Matchmaker reads to figure out where a server really is before deciding whether to join it
 
 ## What it looks like
 

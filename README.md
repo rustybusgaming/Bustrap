@@ -31,7 +31,7 @@
 
 Bustrap is a custom bootstrapper for the Roblox client that gives you full control over how Roblox looks, feels, and launches — without injecting exploits or modifying the client in ways that risk your account.
 
-It builds on the solid foundation of [Bloxstrap](https://github.com/bloxstraplabs/bloxstrap) by pizzaboxer and layers on a refreshed UI, custom theming, and quality-of-life improvements.
+It builds on the solid foundation of [Bustrap](https://github.com/BloxstrapLabs/Bustrap) by pizzaboxer and layers on a refreshed UI, custom theming, and quality-of-life improvements.
 
 ## ✨ Features
 
@@ -93,7 +93,7 @@ Join the [Bustrap Discord](https://discord.gg/5tJBqBH8ck) for support, bug repor
    ```bash
    git clone --recurse-submodules https://github.com/rustybusgaming/Bustrap.git
    ```
-3. Open `Voidstrap.sln` in Visual Studio 2022 (or newer).
+3. Open `Bustrap.sln` in Visual Studio 2022 (or newer).
 4. Restore packages and build the solution.
 
 > If you cloned without `--recurse-submodules`, run `git submodule update --init --recursive` inside the repo.
@@ -108,7 +108,7 @@ Contributions are welcome! Feel free to:
 
 ## 🌟 Credits
 
-- Built on top of [Bloxstrap](https://github.com/bloxstraplabs/bloxstrap) by **pizzaboxer** — the original project this work is forked from.
+- Built on top of [Bustrap](https://github.com/BloxstrapLabs/Bustrap) by **pizzaboxer** — the original project this work is forked from.
 - Thanks to everyone who has starred ⭐, reported bugs, and contributed.
 
 ## 📬 Find Me
@@ -119,7 +119,7 @@ Contributions are welcome! Feel free to:
 
 ## 📜 License
 
-This project is licensed under the **MIT License** — see [`LICENSE.BLOXSTRAP`](LICENSE.BLOXSTRAP) for details.
+This project is licensed under the **MIT License** — see [`LICENSE.Bustrap`](LICENSE.Bustrap) for details.
 
 ---
 
