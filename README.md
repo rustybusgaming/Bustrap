@@ -16,8 +16,6 @@
 
 [🌐 Website](https://bustrapp.netlify.app/) • [⬇️ Download](https://github.com/rustybusgaming/Bustrap/releases/latest) • [📺 Tutorial](https://www.youtube.com/watch?v=P-GqTUo_HIA) • [💖 Donate](https://bustrapp.netlify.app/donate/donate) • [💬 Discord](https://discord.gg/5tJBqBH8ck)
 
-</div>
-
 ---
 
 > [!IMPORTANT]
@@ -115,9 +113,9 @@ Contributions are welcome! Feel free to:
 
 ## 📬 Find Me
 
-- 🎮 **Roblox:** [@conshun](https://www.roblox.com/users/8657911604/profile)
-- 📺 **YouTube:** [@thisbreadtic](https://www.youtube.com/@thisbreadtic)
-- 💬 **Discord:** `braticlyyy`
+- 🎮 **Roblox:** [@UnderTermsAndPolicys](https://www.roblox.com/users/8657911604/profile)
+- 📺 **YouTube:** [@schoolbusgaming](https://www.youtube.com/@schoolbusgaming)
+- 💬 **Discord:** `makingartformoney`
 
 ## 📜 License
 

@@ -39,7 +39,6 @@ namespace Voidstrap.UI.Elements.Settings
         private readonly Random _snowRandom = new();
         private readonly List<Snowflake> _snowflakes = new();
         private readonly DispatcherTimer _snowTimer;
-        private readonly DispatcherTimer _visibilityTimer = new DispatcherTimer();
         private DiscordRpcClient? _discordClient;
         private bool _discordRpcEnabled = App.Settings.Prop.VoidRPC;
         private AppearanceViewModel _appearanceViewModel;
@@ -82,17 +81,18 @@ namespace Voidstrap.UI.Elements.Settings
             ApplyBackgroundSettings();
             GlobalSearchBox.TextChanged += GlobalSearchBox_TextChanged;
             GlobalSearchBox.LostFocus += GlobalSearchBox_LostFocus;
-            // shi finna be laggy :sob:
-            _visibilityTimer.Interval = TimeSpan.FromSeconds(0.8);
-            _visibilityTimer.Tick += (s, e) => UpdateFastFlagEditorVisibility();
-            _visibilityTimer.Start();
+            // Run the visibility check once instead of polling every 0.8s.
+            UpdateFastFlagEditorVisibility();
             _snowTimer = new DispatcherTimer(DispatcherPriority.Background)
             {
-                Interval = TimeSpan.FromMilliseconds(50)
+                Interval = TimeSpan.FromMilliseconds(33) // ~30 FPS, lighter than the previous 20 FPS loop
             };
             _snowTimer.Tick += SnowTimer_Tick;
             _currentBackgroundPath = _appearanceViewModel.BackgroundFilePath;
 
+            // _backgroundUpdateTimer kept for the gradient opacity slider, which
+            // doesn't currently raise change events on its own. File changes are
+            // still handled by the FileSystemWatcher above.
             _backgroundUpdateTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(1)
@@ -1446,7 +1446,7 @@ namespace Voidstrap.UI.Elements.Settings
             InitSnow();
         }
 
-        private const int FlakeCount = 40;
+        private const int FlakeCount = 30;
         private void InitSnow()
         {
             if (SnowCanvas == null) return;
