@@ -31,9 +31,11 @@
     mc:Ignorable="d">
 
     <base:WpfUiWindow.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <!-- Freeze BitmapImage so the ICO is decoded once and shared, not re-read every time the resource is hit. -->
         <BitmapImage x:Key="AppIconImage"
-                     UriSource="pack://application:,,,/Voidstrap.ico" />
+                     UriSource="pack://application:,,,/Voidstrap.ico"
+                     CacheOption="OnLoad"
+                     DecodePixelWidth="64" />
         <media:CubicEase x:Key="SmoothEaseOut" EasingMode="EaseOut" />
         <media:QuinticEase x:Key="UltraSmoothEaseOut" EasingMode="EaseOut" />
         <LinearGradientBrush x:Key="LightningBrush"

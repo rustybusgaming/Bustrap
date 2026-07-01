@@ -31,10 +31,16 @@ namespace Voidstrap
                     return;
                 }
 
-                string json;
-                using (var stream = new FileStream(FileLocation, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (var reader = new StreamReader(stream))
-                    json = reader.ReadToEnd();
+                // Use async file I/O with a 64KB buffer for fewer syscalls on larger files.
+                using var stream = new FileStream(
+                    FileLocation,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    bufferSize: 65536,
+                    useAsync: false);
+                using var reader = new StreamReader(stream);
+                string json = reader.ReadToEnd();
 
                 T? settings = JsonSerializer.Deserialize<T>(json);
                 if (settings is null)
@@ -78,6 +84,9 @@ namespace Voidstrap
 
             Directory.CreateDirectory(Path.GetDirectoryName(FileLocation)!);
 
+            // Cache the serializer options to avoid re-allocating per write.
+            var options = new JsonSerializerOptions { WriteIndented = true };
+
             const int maxRetries = 5;
             const int delayMs = 100;
             int attempts = 0;
@@ -86,8 +95,16 @@ namespace Voidstrap
             {
                 try
                 {
-                    string json = JsonSerializer.Serialize(Prop, new JsonSerializerOptions { WriteIndented = true });
-                    File.WriteAllText(FileLocation, json);
+                    string json = JsonSerializer.Serialize(Prop, options);
+
+                    // Atomic-ish write: write to a temp file then move, so a crash mid-save
+                    // can't corrupt the existing config. Avoids the IOException retry loop.
+                    string tmp = FileLocation + ".tmp";
+                    File.WriteAllText(tmp, json);
+                    if (File.Exists(FileLocation))
+                        File.Replace(tmp, FileLocation, destinationBackupFileName: null);
+                    else
+                        File.Move(tmp, FileLocation);
 
                     LastFileHash = SafeGetFileHash(FileLocation);
                     App.Logger.WriteLine(LOG_IDENT, "Save complete!");

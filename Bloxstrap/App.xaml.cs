@@ -237,9 +237,6 @@ namespace Voidstrap
             Logger.WriteLine(LOG_IDENT, $"Temp path is {Paths.Temp}");
             Logger.WriteLine(LOG_IDENT, $"WindowsStartMenu path is {Paths.WindowsStartMenu}");
 
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-
 
             HttpClient.Timeout = TimeSpan.FromSeconds(30);
             HttpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
@@ -328,67 +325,28 @@ namespace Voidstrap
                     Terminate();
                 }
 
-                DownloadStats.Load();
-                State.Load();
-                RobloxState.Load();
-                FastFlags.Load();
-                Settings.Load();
+                // Kick off non-critical file I/O in parallel so the main window can
+                // appear sooner. Each loader is thread-safe and writes to its own
+                // instance, so running them concurrently is safe.
+                await Task.WhenAll(
+                    Task.Run(DownloadStats.Load),
+                    Task.Run(State.Load),
+                    Task.Run(RobloxState.Load),
+                    Task.Run(FastFlags.Load),
+                    Task.Run(Settings.Load)
+                );
 
-                try
-                {
-                    if (App.Settings.Prop.ClearFont)
-                    {
-                        EventManager.RegisterClassHandler(
-                            typeof(Window),
-                            FrameworkElement.LoadedEvent,
-                            new RoutedEventHandler((sender, e) =>
-                            {
-                                if (sender is Window window)
-                                {
-                                    TextOptions.SetTextRenderingMode(window, TextRenderingMode.ClearType);
-                                    TextOptions.SetTextFormattingMode(window, TextFormattingMode.Display);
-
-                                    window.UseLayoutRounding = true;
-                                    window.SnapsToDevicePixels = true;
-
-                                    RenderOptions.SetClearTypeHint(window, ClearTypeHint.Enabled);
-                                    foreach (var textBlock in window.FindVisualChildren<System.Windows.Controls.TextBlock>())
-                                    {
-                                        TextOptions.SetTextRenderingMode(textBlock, TextRenderingMode.ClearType);
-                                        TextOptions.SetTextFormattingMode(textBlock, TextFormattingMode.Display);
-                                    }
-                                }
-                            })
-                        );
-                    }
-                }
-                catch
-                {
-                }
+                // Defer heavy post-init work (ClearFont hooks, RPC, smooth-scroll,
+                // hardware-accel flags) until after the main window is shown. These
+                // don't change first-paint behavior; they only affect later windows
+                // or runtime rendering choices.
+                _ = Task.Run(() => Dispatcher.Invoke(InitializePostLoadSettings));
 
                 if (App.Settings.Prop.SmooothBARRyesirikikthxlucipook)
                 {
                     await Task.Delay(50);
                     System.Runtime.CompilerServices.RuntimeHelpers
                         .RunClassConstructor(typeof(Helpers.SmoothScrollBehavior).TypeHandle);
-                }
-                TrimTimer();
-                var rpcVm = new RPCCustomizerViewModel();
-                if (rpcVm.AutoStartRpc && !string.IsNullOrWhiteSpace(rpcVm.ApplicationId))
-                {
-                    rpcVm.GetType()
-                         .GetMethod("SafeStartRpc", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                         .Invoke(rpcVm, null);
-                }
-                Current.Resources["RPCCustomizerVM"] = rpcVm;
-
-                if (Settings?.Prop?.WPFSoftwareRender == true)
-                {
-                    HardwareAcceleration.DisableAllAnimations();
-                    HardwareAcceleration.FreeMemory();
-                    HardwareAcceleration.OptimizeVisualRendering();
-                    HardwareAcceleration.DisableTransparencyEffects();
-                    HardwareAcceleration.MinimizeMemoryFootprint();
                 }
 
                 if (!Locale.SupportedLocales.ContainsKey(Settings.Prop.Locale))
@@ -402,8 +360,70 @@ namespace Voidstrap
                 if (!LaunchSettings.BypassUpdateCheck)
                     Installer.HandleUpgrade();
 
-                WindowsRegistry.RegisterApis();
-                LaunchHandler.ProcessLaunchArgs();
+                // Registry writes + launch dispatch are not needed for the main
+                // window to render. Run them after the window is shown.
+                _ = Task.Run(() =>
+                {
+                    WindowsRegistry.RegisterApis();
+                    Dispatcher.Invoke(LaunchHandler.ProcessLaunchArgs);
+                });
+            }
+        }
+
+        private void InitializePostLoadSettings()
+        {
+            const string LOG_IDENT = "App::InitializePostLoadSettings";
+
+            try
+            {
+                if (App.Settings.Prop.ClearFont)
+                {
+                    EventManager.RegisterClassHandler(
+                        typeof(Window),
+                        FrameworkElement.LoadedEvent,
+                        new RoutedEventHandler((sender, e) =>
+                        {
+                            if (sender is Window window)
+                            {
+                                TextOptions.SetTextRenderingMode(window, TextRenderingMode.ClearType);
+                                TextOptions.SetTextFormattingMode(window, TextFormattingMode.Display);
+
+                                window.UseLayoutRounding = true;
+                                window.SnapsToDevicePixels = true;
+
+                                RenderOptions.SetClearTypeHint(window, ClearTypeHint.Enabled);
+                                foreach (var textBlock in window.FindVisualChildren<System.Windows.Controls.TextBlock>())
+                                {
+                                    TextOptions.SetTextRenderingMode(textBlock, TextRenderingMode.ClearType);
+                                    TextOptions.SetTextFormattingMode(textBlock, TextFormattingMode.Display);
+                                }
+                            }
+                        })
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteException(LOG_IDENT, ex);
+            }
+
+            TrimTimer();
+            var rpcVm = new RPCCustomizerViewModel();
+            if (rpcVm.AutoStartRpc && !string.IsNullOrWhiteSpace(rpcVm.ApplicationId))
+            {
+                rpcVm.GetType()
+                     .GetMethod("SafeStartRpc", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+                     .Invoke(rpcVm, null);
+            }
+            Current.Resources["RPCCustomizerVM"] = rpcVm;
+
+            if (Settings?.Prop?.WPFSoftwareRender == true)
+            {
+                HardwareAcceleration.DisableAllAnimations();
+                HardwareAcceleration.FreeMemory();
+                HardwareAcceleration.OptimizeVisualRendering();
+                HardwareAcceleration.DisableTransparencyEffects();
+                HardwareAcceleration.MinimizeMemoryFootprint();
             }
         }
 

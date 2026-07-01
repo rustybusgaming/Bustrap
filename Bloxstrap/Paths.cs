@@ -57,6 +57,13 @@
 
             Application = Path.Combine(Base, $"{App.ProjectName}.exe");
 
+            // EnsureDirectoryExists hits the disk 7x synchronously on the UI thread.
+            // Defer to a background task so the main window can show sooner.
+            _ = Task.Run(EnsureAllDirectories);
+        }
+
+        private static void EnsureAllDirectories()
+        {
             EnsureDirectoryExists(Downloads);
             EnsureDirectoryExists(SavedBackups);
             EnsureDirectoryExists(Logs);

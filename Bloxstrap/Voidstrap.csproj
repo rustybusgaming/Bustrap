@@ -14,7 +14,9 @@
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<RootNamespace>Voidstrap</RootNamespace>
-		
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<EnableDefaultCompileItems>true</EnableDefaultCompileItems>
 
 		<!-- Single File Publishing -->
 		<PublishSingleFile>true</PublishSingleFile>
@@ -22,6 +24,7 @@
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 
 		<!-- Disable satellite assemblies -->
 		<SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
@@ -30,14 +33,24 @@
 		<!-- Optimization -->
 		<PublishTrimmed>false</PublishTrimmed>
 		<PublishReadyToRun>true</PublishReadyToRun>
+		<PublishReadyToRunComposite>true</PublishReadyToRunComposite>
 		<TieredCompilation>true</TieredCompilation>
 		<TieredCompilationQuickJit>true</TieredCompilationQuickJit>
 		<TieredPGO>true</TieredPGO>
-		
+		<ServerGarbageCollection>true</ServerGarbageCollection>
+		<ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+		<RetainVMGarbageCollection>false</RetainVMGarbageCollection>
+
 		<!-- Startup Speed -->
 		<OptimizeImplicitlyTriggeredBuild>true</OptimizeImplicitlyTriggeredBuild>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-		
+
+		<!-- Skip doc generation & copy ref assemblies we don't need -->
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<ProduceReferenceAssemblyInOutdir>false</ProduceReferenceAssemblyInOutdir>
+		<CopyDebugSymbolFilesFromPackages>false</CopyDebugSymbolFilesFromPackages>
+		<CopyDocumentationFilesFromPackages>false</CopyDocumentationFilesFromPackages>
+
 		<DebugType>None</DebugType>
 		<DebugSymbols>false</DebugSymbols>
 		<StartupObject></StartupObject>

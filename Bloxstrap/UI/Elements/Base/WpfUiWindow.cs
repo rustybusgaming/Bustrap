@@ -15,7 +15,8 @@ namespace Voidstrap.UI.Elements.Base
     /// </summary>
     public abstract class WpfUiWindow : UiWindow, IDisposable
     {
-        private readonly IThemeService _themeService = new ThemeService();
+        // ThemeService has no internal state worth re-allocating per window; share one.
+        private static readonly IThemeService _themeService = new ThemeService();
         private ThemeType? _lastAppliedTheme = null;
         private bool _disposed = false;
 
