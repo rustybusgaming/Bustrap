@@ -57,9 +57,6 @@
         <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     </PropertyGroup>
 
-</Project>
-
-    <!-- Fix for WPF temporary project double-inclusion bug -->
     <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('_wpftmp'))">
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     </PropertyGroup>
