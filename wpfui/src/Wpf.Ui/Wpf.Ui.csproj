@@ -15,11 +15,8 @@
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateLibraryLayout>true</GenerateLibraryLayout>
-  </PropertyGroup>
-
-  <!-- Fix for WPF temporary project double-inclusion engine bug -->
-  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('_wpftmp'))">
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
   <ItemGroup>
