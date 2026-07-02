@@ -59,7 +59,8 @@
 
         <StartupObject></StartupObject>
 
-        <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion>10.0</SupportedOSPlatformVersion>
+        <TargetPlatformVersion>10.0</TargetPlatformVersion>
     </PropertyGroup>
 
     <!-- Fix for WPF temporary project double-inclusion bug -->
