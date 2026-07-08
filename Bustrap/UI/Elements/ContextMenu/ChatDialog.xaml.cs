@@ -34,7 +34,7 @@ namespace Bustrap.UI.Elements.ContextMenu
             }
         }
 
-        private void DiscordChatWindow_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void DiscordChatWindow_DataContextChanged(object? sender, DependencyPropertyChangedEventArgs e)
         {
             if (DataContext is DiscordChatViewModel vm)
             {
@@ -50,7 +50,7 @@ namespace Bustrap.UI.Elements.ContextMenu
             }
         }
 
-        private void AttachAutoScroll(DiscordChatViewModel.ChatTab tab)
+        private void AttachAutoScroll(DiscordChatViewModel.ChatTab? tab)
         {
             if (tab == null) return;
 
@@ -64,7 +64,7 @@ namespace Bustrap.UI.Elements.ContextMenu
             };
         }
 
-        private ScrollViewer FindScrollViewer(DependencyObject dep)
+        private ScrollViewer? FindScrollViewer(DependencyObject dep)
         {
             if (dep is ScrollViewer sv) return sv;
 

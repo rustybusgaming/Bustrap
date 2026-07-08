@@ -38,7 +38,12 @@ namespace Bustrap.Integrations
             _activityWatcher.OnRPCMessage += (_, message) => ProcessRPCMessage(message);
 
             _rpcClient.OnReady += (_, e) =>
-                App.Logger.WriteLine(LOG_IDENT, $"Ready: {e.User} ({e.User.ID})");
+            {
+                var user = e.User;
+                string username = user?.Username ?? "Unknown";
+                string userId = user?.ID.ToString() ?? "0";
+                App.Logger.WriteLine(LOG_IDENT, $"Ready: {username} ({userId})");
+            };
 
             _rpcClient.OnPresenceUpdate += (_, _) =>
                 App.Logger.WriteLine(LOG_IDENT, "Presence updated");
@@ -210,7 +215,7 @@ namespace Bustrap.Integrations
 
                 return totalFlags;
             }
-            catch (Exception ex)
+            catch
             {
                 return -1;
             }
@@ -302,12 +307,12 @@ namespace Bustrap.Integrations
             }
 
             string largeImageKey = !string.IsNullOrWhiteSpace(App.Settings.Prop.UseCustomIcon)
-                ? App.Settings.Prop.UseCustomIcon
-                : (App.Settings.Prop.GameIconChecked ? universe.Thumbnail.ImageUrl : "");
+                ? App.Settings.Prop.UseCustomIcon!
+                : (App.Settings.Prop.GameIconChecked ? (universe.Thumbnail.ImageUrl ?? string.Empty) : string.Empty);
 
             string largeImageText = !string.IsNullOrWhiteSpace(App.Settings.Prop.UseCustomIcon)
-                ? ""
-                : (App.Settings.Prop.GameIconChecked && App.Settings.Prop.GameNameChecked ? universe.Data.Name : "");
+                ? string.Empty
+                : (App.Settings.Prop.GameIconChecked && App.Settings.Prop.GameNameChecked ? (universe.Data.Name ?? string.Empty) : string.Empty);
 
             if (_currentPresence != null)
             {
@@ -409,7 +414,7 @@ namespace Bustrap.Integrations
                 }
 
                 if (!string.IsNullOrEmpty(inviteUrl))
-                    buttons.Add(new Button { Label = "Join server", Url = inviteUrl });
+                    buttons.Add(new Button { Label = "Join server", Url = inviteUrl! });
             }
 
             buttons.Add(new Button { Label = "Game Page", Url = $"https://www.roblox.com/games/{data.PlaceId}" });

@@ -40,7 +40,7 @@ namespace Bustrap.UI.Elements.Overlay
         }
 
         #region Public API
-        public void ShowNotification(string message, string imagePathOrUrl = null, double durationSeconds = 5)
+        public void ShowNotification(string message, string? imagePathOrUrl = null, double durationSeconds = 5)
         {
             _queue.Enqueue(new NotificationItem
             {
@@ -165,8 +165,8 @@ namespace Bustrap.UI.Elements.Overlay
 
         private class NotificationItem
         {
-            public string Text { get; set; }
-            public string ImagePathOrUrl { get; set; }
+            public string Text { get; set; } = string.Empty;
+            public string? ImagePathOrUrl { get; set; }
             public double Duration { get; set; } = 5; // this is here as fallback so dw about it
         }
     }

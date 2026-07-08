@@ -14,7 +14,7 @@ public static class DiscordManager
         _client.Initialize();
     }
 
-    public static void UpdatePresence(string title, string stateUrl, (string label, string link)[] buttons, string largeImageKey = null)
+    public static void UpdatePresence(string title, string stateUrl, (string label, string link)[] buttons, string? largeImageKey = null)
     {
         if (_client == null) return;
 

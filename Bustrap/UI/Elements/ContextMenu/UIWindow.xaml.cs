@@ -22,10 +22,10 @@ namespace Bustrap.UI.Elements.Overlay
         private int _fps;
         private readonly Stopwatch _fpsStopwatch = Stopwatch.StartNew();
 
-        private TextBlock _fpsTextBlock;
-        private TextBlock _pingTextBlock;
-        private TextBlock _locationTextBlock;
-        private TextBlock _timeTextBlock;
+        private TextBlock _fpsTextBlock = null!;
+        private TextBlock _pingTextBlock = null!;
+        private TextBlock _locationTextBlock = null!;
+        private TextBlock _timeTextBlock = null!;
 
         private readonly DispatcherTimer _updateTimer;
 
@@ -38,11 +38,11 @@ namespace Bustrap.UI.Elements.Overlay
         private double _brightness = App.Settings.Prop.Brightness;
         private double _lastAppliedBrightness = App.Settings.Prop.Brightness;
 
-        private Border _darkOverlay;
-        private Border _brightOverlay;
+        private Border _darkOverlay = null!;
+        private Border _brightOverlay = null!;
 
-        private string _serverIp;
-        private string _lastServerIp;
+        private string? _serverIp;
+        private string? _lastServerIp;
         private bool _locationFetching;
         private string _serverLocation = "Location: --";
 
@@ -341,7 +341,7 @@ namespace Bustrap.UI.Elements.Overlay
         [DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
         [DllImport("user32.dll")] private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string name)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }

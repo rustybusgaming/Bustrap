@@ -31,13 +31,11 @@ namespace Bustrap.UI.Elements.ContextMenu
 
         private readonly Watcher _watcher;
 
-        private DispatcherTimer closestServerTimer;
+        private DispatcherTimer closestServerTimer = null!;
         private Server? lastClosestServer;
 
         [DllImport("kernel32.dll")]
         private static extern bool SetProcessWorkingSetSize(IntPtr proc, UIntPtr min, UIntPtr max);
-
-        private DispatcherTimer memoryCleanTimer;
 
         private ActivityWatcher? _activityWatcher => _watcher.ActivityWatcher;
 
@@ -52,18 +50,17 @@ namespace Bustrap.UI.Elements.ContextMenu
         private BetterBloxDataCenterConsole? _betterbloxWindow;
 
         private OutputConsole? _OutputConsole;
-        private DispatcherTimer memoryTimer;
+        private DispatcherTimer memoryTimer = null!;
 
         private ChatLogs? _ChatLogs;
 
         private TimeSpan playTime = TimeSpan.Zero;
-        private DispatcherTimer playTimer;
-        private Watcher watcher;
+        private DispatcherTimer playTimer = null!;
 
-        private static string TrimWithThreeDots(string text, int maxChars = 18)
+        private static string TrimWithThreeDots(string? text, int maxChars = 18)
         {
             if (string.IsNullOrEmpty(text) || text.Length <= maxChars)
-                return text;
+            return text ?? string.Empty;
 
             const string dots = "...";
             int take = maxChars - dots.Length;
@@ -96,10 +93,9 @@ namespace Bustrap.UI.Elements.ContextMenu
 
                 Dispatcher.Invoke(() => FlagsTextBlock.Text = $"Flags: {totalFlags}");
             }
-            catch (Exception ex)
+            catch
             {
                 Dispatcher.Invoke(() => FlagsTextBlock.Text = "Flags: Error");
-                Debug.WriteLine($"Error loading flags: {ex.Message}");
             }
         }
 
@@ -309,8 +305,6 @@ namespace Bustrap.UI.Elements.ContextMenu
         {
             try
             {
-                var BustrapProcess = Process.GetProcessesByName("Bustrap").FirstOrDefault();
-                long BustrapMemory = BustrapProcess?.WorkingSet64 ?? 0;
                 var robloxProcesses = Process.GetProcessesByName("RobloxPlayerBeta");
                 long robloxMemory = robloxProcesses.Sum(p => p.WorkingSet64);
 
@@ -443,6 +437,7 @@ namespace Bustrap.UI.Elements.ContextMenu
                     iconUrl = data.UniverseDetails?.Thumbnail.ImageUrl;
                     universeName = data.UniverseDetails?.Data.Name ?? universeName;
                 }
+                public void UpdateCurrentGameInfo(string? gameName, string? gameIconUrl)
                 catch { }
             }
 
