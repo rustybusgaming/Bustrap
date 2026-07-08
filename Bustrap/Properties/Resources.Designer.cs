@@ -122,18 +122,6 @@ namespace Bustrap.Properties
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
-        internal static System.Drawing.Icon IconBustrap
-        {
-            get
-            {
-                object obj = ResourceManager.GetObject("IconBustrap", resourceCulture);
-                return ((System.Drawing.Icon)(obj));
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
-        /// </summary>
         internal static System.Drawing.Icon Icon2008
         {
             get

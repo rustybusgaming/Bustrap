@@ -116,6 +116,11 @@ namespace Bustrap.Models.Persistable
         public bool ShowServerDetails { get; set; } = true;
 
         public bool OverlaysEnabled { get; set; } = false;
+        public bool SwiftTunnelEnabled { get; set; } = false;
+        public string SwiftTunnelRegion { get; set; } = "auto";
+        public bool SwiftTunnelAutoConnect { get; set; } = false;
+        public bool SwiftTunnelSplitTunnel { get; set; } = false;
+        public bool SwiftTunnelRememberLogin { get; set; } = false;
 
         public double Brightness { get; set; } = 50;
 
