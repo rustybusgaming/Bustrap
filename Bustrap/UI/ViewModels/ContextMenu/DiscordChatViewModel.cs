@@ -415,7 +415,7 @@ namespace Bustrap.UI.Chat
                 var discordMessages = JsonSerializer.Deserialize<DiscordMessage[]>(json);
                 if (discordMessages == null) return;
 
-                var ordered = discordMessages.Reverse().ToList();
+                var ordered = discordMessages.AsEnumerable().Reverse().ToList();
                 var ids = ordered.Select(m => m.id).ToHashSet();
 
                 Application.Current.Dispatcher.Invoke(() =>
