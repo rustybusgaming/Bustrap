@@ -227,27 +227,27 @@ namespace Bustrap
                 App.Logger.WriteException(LOGGER_STRING, ex);
                 Frontend.ShowMessageBox($"Failed to load backup:\n{ex.Message}", MessageBoxImage.Error);
             }
+        }
 
-            private static string ResolveBackupPath(string baseDir, string inputName)
-            {
-                string fileName = Path.GetFileName(inputName.Trim());
+        private static string ResolveBackupPath(string baseDir, string inputName)
+        {
+            string fileName = Path.GetFileName(inputName.Trim());
 
-                if (string.IsNullOrWhiteSpace(fileName))
-                    throw new ArgumentException("Backup file name cannot be empty.", nameof(inputName));
+            if (string.IsNullOrWhiteSpace(fileName))
+                throw new ArgumentException("Backup file name cannot be empty.", nameof(inputName));
 
-                if (Path.GetExtension(fileName).Length == 0)
-                    fileName += ".json";
+            if (Path.GetExtension(fileName).Length == 0)
+                fileName += ".json";
 
-                var validation = PathValidator.IsFileNameValid(fileName);
-                if (validation != PathValidator.ValidationResult.Ok)
-                    throw new InvalidOperationException($"Invalid backup file name: {fileName}");
+            var validation = PathValidator.IsFileNameValid(fileName);
+            if (validation != PathValidator.ValidationResult.Ok)
+                throw new InvalidOperationException($"Invalid backup file name: {fileName}");
 
-                string fullPath = Path.GetFullPath(Path.Combine(baseDir, fileName));
-                if (!SecurityHelpers.IsPathUnderDirectory(fullPath, baseDir))
-                    throw new InvalidOperationException("Backup path escapes the backup directory.");
+            string fullPath = Path.GetFullPath(Path.Combine(baseDir, fileName));
+            if (!SecurityHelpers.IsPathUnderDirectory(fullPath, baseDir))
+                throw new InvalidOperationException("Backup path escapes the backup directory.");
 
-                return fullPath;
-            }
+            return fullPath;
         }
     }
 }
