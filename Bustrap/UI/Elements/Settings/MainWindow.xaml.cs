@@ -1660,13 +1660,13 @@ namespace Bustrap.UI.Elements.Settings
 
         #region Navigation
 
-        private void SaveNavigation(INavigation? sender, RoutedNavigationEventArgs e)
+        private void SaveNavigation(INavigation sender, RoutedNavigationEventArgs e)
         {
             App.State.Prop.LastPage = RootNavigation.SelectedPageIndex;
             UpdateDiscordPresence();
         }
 
-        private void OnRootNavigationNavigated(INavigation? sender, RoutedNavigationEventArgs e)
+        private void OnRootNavigationNavigated(INavigation sender, RoutedNavigationEventArgs e)
         {
             UpdateDiscordPresence();
         }

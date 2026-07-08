@@ -155,7 +155,7 @@ namespace Bustrap.UI.Elements.ContextMenu
             }
         }
 
-        public void UpdateCurrentGameInfo(string gameName, string gameIconUrl)
+        public void UpdateCurrentGameInfo(string? gameName, string? gameIconUrl)
         {
             if (string.IsNullOrEmpty(gameName))
             {
@@ -437,7 +437,6 @@ namespace Bustrap.UI.Elements.ContextMenu
                     iconUrl = data.UniverseDetails?.Thumbnail.ImageUrl;
                     universeName = data.UniverseDetails?.Data.Name ?? universeName;
                 }
-                public void UpdateCurrentGameInfo(string? gameName, string? gameIconUrl)
                 catch { }
             }
 
@@ -646,7 +645,7 @@ namespace Bustrap.UI.Elements.ContextMenu
             playTimer.Start();
         }
 
-        private void PlayTimer_Tick(object sender, EventArgs e)
+        private void PlayTimer_Tick(object? sender, EventArgs e)
         {
             playTime = playTime.Add(TimeSpan.FromSeconds(1));
             UpdatePlayTime(playTime);
