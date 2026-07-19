@@ -1,8 +1,5 @@
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using Bustrap.UI.Elements.About;
@@ -12,14 +9,15 @@ namespace Bustrap.UI.ViewModels.Settings
 {
     public class MainWindowViewModel : NotifyPropertyChangedViewModel
     {
-        public string AppVersion => System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(); // fakin version
+        public string AppVersion => System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!.ToString();
+
+        public bool IsFastFlagEditorVisible => !App.Settings.Prop.LockDefault;
+
         public ICommand OpenAboutCommand => new RelayCommand(OpenAbout);
 
         public ICommand SaveSettingsCommand => new RelayCommand(SaveSettings);
 
         public ICommand SaveAndLaunchSettingsCommand => new RelayCommand(SaveAndLaunchSettings);
-
-        public event PropertyChangedEventHandler? PropertyChanged;
 
         public ICommand CloseWindowCommand => new RelayCommand(CloseWindow);
 
@@ -96,19 +94,6 @@ namespace Bustrap.UI.ViewModels.Settings
             SaveSettings();
             RequestSaveLaunchNoticeEvent?.Invoke(this, EventArgs.Empty);
             LaunchHandler.LaunchRoblox(LaunchMode.Player);
-        }
-
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
-        {
-            if (EqualityComparer<T>.Default.Equals(field, newValue))
-            {
-                return false;
-            }
-
-            field = newValue;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName ?? throw new ArgumentNullException(nameof(propertyName))));
-
-            return true;
         }
     }
 }

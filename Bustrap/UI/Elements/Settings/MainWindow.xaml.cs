@@ -100,7 +100,6 @@ namespace Bustrap.UI.Elements.Settings
             _backgroundUpdateTimer.Tick += BackgroundUpdateTimer_Tick;
             _backgroundUpdateTimer.Start();
 
-            Loaded += MainWindow_Loaded;
             SizeChanged += MainWindow_SizeChanged;
 
             RootFrame.Navigated += RootFrame_Navigated;
@@ -1377,14 +1376,8 @@ namespace Bustrap.UI.Elements.Settings
 
         private void UpdateFastFlagEditorVisibility()
         {
-            if (FastFlagEditorNavItem == null)
-                return;
-
-            var shouldBeVisible = !App.Settings.Prop.LockDefault;
-            if (FastFlagEditorNavItem.Visibility == (shouldBeVisible ? Visibility.Visible : Visibility.Collapsed))
-                return;
-
-            FastFlagEditorNavItem.Visibility = shouldBeVisible ? Visibility.Visible : Visibility.Collapsed;
+            if (DataContext is MainWindowViewModel vm)
+                vm.OnPropertyChanged(nameof(MainWindowViewModel.IsFastFlagEditorVisible));
         }
 
         private async void MainWindow_Loaded(object? sender, RoutedEventArgs e)
@@ -1413,19 +1406,30 @@ namespace Bustrap.UI.Elements.Settings
             var storyboard = TryFindResource("IntroStoryboard") as Storyboard;
             if (storyboard != null)
             {
-                storyboard.Completed += (_, _) =>
-                {
-                    IntroOverlay.Visibility = Visibility.Collapsed;
-                    IntroOverlay.Opacity = 1.0;
-                };
+                storyboard.Completed += (_, _) => HideIntroOverlay();
 
                 IntroOverlay.Visibility = Visibility.Visible;
                 storyboard.Begin(IntroOverlay, true);
+
+                // Safety fallback in case the storyboard fails to complete.
+                _ = Task.Delay(2500).ContinueWith(_ =>
+                {
+                    Dispatcher.Invoke(HideIntroOverlay);
+                }, TaskScheduler.FromCurrentSynchronizationContext());
             }
             else
             {
-                IntroOverlay.Visibility = Visibility.Collapsed;
+                HideIntroOverlay();
             }
+        }
+
+        private void HideIntroOverlay()
+        {
+            if (IntroOverlay == null || IntroOverlay.Visibility == Visibility.Collapsed)
+                return;
+
+            IntroOverlay.Visibility = Visibility.Collapsed;
+            IntroOverlay.Opacity = 1.0;
         }
 
         private Size _lastSnowCanvasSize = Size.Empty;
@@ -1586,7 +1590,9 @@ namespace Bustrap.UI.Elements.Settings
             if (RootNavigation == null)
                 return;
 
-            RootNavigation.SelectedPageIndex = App.State.Prop.LastPage;
+            if (!RootNavigation.Navigate(App.State.Prop.LastPage))
+                RootNavigation.Navigate(typeof(HistoryPage));
+
             RootNavigation.Navigated += SaveNavigation;
         }
 
