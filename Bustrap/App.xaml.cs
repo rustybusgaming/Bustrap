@@ -329,11 +329,11 @@ namespace Bustrap
                 // appear sooner. Each loader is thread-safe and writes to its own
                 // instance, so running them concurrently is safe.
                 await Task.WhenAll(
-                    Task.Run(DownloadStats.Load),
-                    Task.Run(State.Load),
-                    Task.Run(RobloxState.Load),
-                    Task.Run(FastFlags.Load),
-                    Task.Run(Settings.Load)
+                    Task.Run(() => DownloadStats.Load()),
+                    Task.Run(() => State.Load()),
+                    Task.Run(() => RobloxState.Load()),
+                    Task.Run(() => FastFlags.Load()),
+                    Task.Run(() => Settings.Load())
                 );
 
                 // Defer heavy post-init work (ClearFont hooks, RPC, smooth-scroll,

@@ -18,8 +18,8 @@ namespace Bustrap.UI.Elements.Crosshair
         private readonly ModsViewModel _viewModel;
         private readonly DispatcherTimer _robloxCheckTimer;
 
-        private Image _imageCrosshair;
-        private MediaElement _gifCrosshair;
+        private Image _imageCrosshair = null!;
+        private MediaElement _gifCrosshair = null!;
 
         public CrosshairWindow(ModsViewModel vm)
         {
@@ -58,7 +58,7 @@ namespace Bustrap.UI.Elements.Crosshair
             Show();
         }
 
-        private void OnDisplaySettingsChanged(object sender, EventArgs e)
+        private void OnDisplaySettingsChanged(object? sender, EventArgs e)
         {
             UpdateScreenBounds();
         }

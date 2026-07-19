@@ -41,8 +41,8 @@ namespace Bustrap.UI.Elements.Settings
         private readonly DispatcherTimer _snowTimer;
         private DiscordRpcClient? _discordClient;
         private bool _discordRpcEnabled = App.Settings.Prop.VoidRPC;
-        private AppearanceViewModel _appearanceViewModel;
-        private DispatcherTimer _backgroundUpdateTimer;
+        private AppearanceViewModel _appearanceViewModel = null!;
+        private DispatcherTimer _backgroundUpdateTimer = null!;
         private string? _currentBackgroundPath;
         private FileSystemWatcher? _appearanceViewModelWatcher;
         private bool _spotifyInitialized = false;
@@ -50,9 +50,9 @@ namespace Bustrap.UI.Elements.Settings
         private Vector _targetOffset;
         private double _currentRotation;
         private double _targetRotation;
-        private DispatcherTimer _searchDebounceTimer;
+        private DispatcherTimer? _searchDebounceTimer;
         private List<TextBlock> _allTextBlocksCache = new List<TextBlock>();
-        private Page _lastPage = null;
+        private Page? _lastPage = null;
         private const double MaxOffset = 0.04;
         private const double MaxRotation = 5.0;
         private const double FollowSpeed = 0.035;
@@ -166,7 +166,7 @@ namespace Bustrap.UI.Elements.Settings
             {
                 if (child is System.Windows.Controls.Button btn)
                 {
-                    string content = btn.Content?.ToString();
+                    string? content = btn.Content?.ToString();
                     if (content == "X" || content == "+") continue;
                 }
 
@@ -1292,7 +1292,7 @@ namespace Bustrap.UI.Elements.Settings
 
             if (RootNavigation != null)
             {
-                RootNavigation.Navigated += (s, e) => UpdateDiscordPresence();
+                RootNavigation.Navigated += OnRootNavigationNavigated;
             }
 
             UpdateDiscordPresence();
@@ -1313,8 +1313,9 @@ namespace Bustrap.UI.Elements.Settings
 
             if (selectedItem is Wpf.Ui.Controls.NavigationItem navItem)
             {
-                if (!string.IsNullOrWhiteSpace(navItem.Content?.ToString()))
-                    return navItem.Content!.ToString();
+                string? content = navItem.Content?.ToString();
+                if (!string.IsNullOrWhiteSpace(content))
+                    return content;
 
                 if (navItem.PageType != null)
                     return navItem.PageType.Name;
@@ -1615,7 +1616,7 @@ namespace Bustrap.UI.Elements.Settings
         {
             await Task.Delay(225);
             if (!Dispatcher.HasShutdownStarted)
-                Dispatcher.InvokeAsync(() => AlreadyRunningSnackbar?.Show());
+                await Dispatcher.InvokeAsync(() => AlreadyRunningSnackbar?.Show());
         }
 
         #endregion
@@ -1668,6 +1669,11 @@ namespace Bustrap.UI.Elements.Settings
         private void SaveNavigation(INavigation sender, RoutedNavigationEventArgs e)
         {
             App.State.Prop.LastPage = RootNavigation.SelectedPageIndex;
+            UpdateDiscordPresence();
+        }
+
+        private void OnRootNavigationNavigated(INavigation sender, RoutedNavigationEventArgs e)
+        {
             UpdateDiscordPresence();
         }
 

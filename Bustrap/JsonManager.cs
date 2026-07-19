@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Windows;
 
@@ -9,12 +10,27 @@ namespace Bustrap
 {
     public class JsonManager<T> where T : class, new()
     {
+        private static readonly JsonSerializerOptions LoadOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true,
+            IncludeFields = true
+        };
+
+        private static readonly JsonSerializerOptions SaveOptions = new()
+        {
+            WriteIndented = true,
+            IncludeFields = true
+        };
+
         public T OriginalProp { get; set; } = new();
         public T Prop { get; set; } = new();
         public virtual string ClassName => typeof(T).Name;
         public string? LastFileHash { get; private set; }
         public virtual string BackupsLocation => Path.Combine(Paths.Base, "Backup.json");
         public virtual string FileLocation => Path.Combine(Paths.Base, $"{ClassName}.json");
+        public virtual string BackupFileLocation => FileLocation + ".bak";
         public virtual string LOG_IDENT_CLASS => $"JsonManager<{ClassName}>";
 
         public virtual void Load(bool alertFailure = true)
@@ -42,7 +58,7 @@ namespace Bustrap
                 using var reader = new StreamReader(stream);
                 string json = reader.ReadToEnd();
 
-                T? settings = JsonSerializer.Deserialize<T>(json);
+                T? settings = JsonSerializer.Deserialize<T>(json, LoadOptions);
                 if (settings is null)
                     throw new InvalidOperationException("Deserialization returned null.");
 
@@ -56,19 +72,23 @@ namespace Bustrap
                 App.Logger.WriteLine(LOG_IDENT, "Failed to load!");
                 App.Logger.WriteException(LOG_IDENT, ex);
 
+                if (TryLoadBackup(LOG_IDENT, alertFailure))
+                    return;
+
                 if (alertFailure)
                 {
                     Frontend.ShowMessageBox($"Failed to load settings:\n\n{ex.Message}", MessageBoxImage.Warning);
 
                     try
                     {
-                        string backupPath = FileLocation + ".bak";
-                        File.Copy(FileLocation, backupPath, true);
-                        App.Logger.WriteLine(LOG_IDENT, $"Created backup file: {backupPath}");
+                        if (File.Exists(FileLocation))
+                            File.Copy(FileLocation, BackupFileLocation, true);
+
+                        App.Logger.WriteLine(LOG_IDENT, $"Created backup file: {BackupFileLocation}");
                     }
                     catch (Exception copyEx)
                     {
-                        App.Logger.WriteLine(LOG_IDENT, $"Failed to create backup file: {FileLocation}.bak");
+                        App.Logger.WriteLine(LOG_IDENT, $"Failed to create backup file: {BackupFileLocation}");
                         App.Logger.WriteException(LOG_IDENT, copyEx);
                     }
                 }
@@ -84,8 +104,7 @@ namespace Bustrap
 
             Directory.CreateDirectory(Path.GetDirectoryName(FileLocation)!);
 
-            // Cache the serializer options to avoid re-allocating per write.
-            var options = new JsonSerializerOptions { WriteIndented = true };
+            var options = SaveOptions;
 
             const int maxRetries = 5;
             const int delayMs = 100;
@@ -102,7 +121,7 @@ namespace Bustrap
                     string tmp = FileLocation + ".tmp";
                     File.WriteAllText(tmp, json);
                     if (File.Exists(FileLocation))
-                        File.Replace(tmp, FileLocation, destinationBackupFileName: null);
+                        File.Replace(tmp, FileLocation, BackupFileLocation);
                     else
                         File.Move(tmp, FileLocation);
 
@@ -137,7 +156,7 @@ namespace Bustrap
             try
             {
                 using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    return MD5Hash.FromFile(path);
+                    return MD5Hash.FromStream(stream);
             }
             catch
             {
@@ -171,7 +190,7 @@ namespace Bustrap
                 Directory.CreateDirectory(baseDir);
 
                 string filePath = ResolveBackupPath(baseDir, name);
-                string json = JsonSerializer.Serialize(Prop, new JsonSerializerOptions { WriteIndented = true });
+                string json = JsonSerializer.Serialize(Prop, SaveOptions);
                 File.WriteAllText(filePath, json);
 
                 App.Logger.WriteLine(LOGGER_STRING, $"Backup '{name}' saved successfully.");
@@ -202,7 +221,7 @@ namespace Bustrap
                 using (var reader = new StreamReader(stream))
                     json = reader.ReadToEnd();
 
-                T? settings = JsonSerializer.Deserialize<T>(json);
+                T? settings = JsonSerializer.Deserialize<T>(json, LoadOptions);
                 if (settings is null)
                     throw new InvalidOperationException("Deserialization returned null.");
 
@@ -247,7 +266,8 @@ namespace Bustrap
             if (!SecurityHelpers.IsPathUnderDirectory(fullPath, baseDir))
                 throw new InvalidOperationException("Backup path escapes the backup directory.");
 
-            return fullPath;
+                return fullPath;
+            }
         }
     }
 }

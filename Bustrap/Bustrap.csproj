@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0-windows</TargetFramework>
+        <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
 
         <Nullable>enable</Nullable>
         <UseWPF>true</UseWPF>
@@ -19,7 +19,6 @@
         <ImplicitUsings>disable</ImplicitUsings>
         <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
 
-        <!-- Single File Publishing -->
         <PublishSingleFile>true</PublishSingleFile>
         <SelfContained>true</SelfContained>
         <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -28,11 +27,9 @@
         <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
         <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 
-        <!-- Disable satellite assemblies -->
         <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
         <InvariantGlobalization>false</InvariantGlobalization>
 
-        <!-- Optimization -->
         <PublishTrimmed>false</PublishTrimmed>
         <PublishReadyToRun>true</PublishReadyToRun>
         <PublishReadyToRunComposite>false</PublishReadyToRunComposite>
@@ -45,10 +42,8 @@
         <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
         <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
 
-        <!-- Startup Speed -->
         <OptimizeImplicitlyTriggeredBuild>true</OptimizeImplicitlyTriggeredBuild>
 
-        <!-- Skip doc generation -->
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <ProduceReferenceAssemblyInOutdir>false</ProduceReferenceAssemblyInOutdir>
         <CopyDebugSymbolFilesFromPackages>false</CopyDebugSymbolFilesFromPackages>
@@ -59,13 +54,7 @@
 
         <StartupObject></StartupObject>
 
-        <SupportedOSPlatformVersion>10.0</SupportedOSPlatformVersion>
-        <TargetPlatformVersion>10.0</TargetPlatformVersion>
-    </PropertyGroup>
-
-    <!-- Fix for WPF temporary project double-inclusion bug -->
-    <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('_wpftmp'))">
-        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
