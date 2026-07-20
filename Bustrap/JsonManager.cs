@@ -151,6 +151,44 @@ namespace Bustrap
             }
         }
 
+        private bool TryLoadBackup(string logIdent, bool alertFailure)
+        {
+            string LOG_IDENT = $"{LOG_IDENT_CLASS}::TryLoadBackup";
+
+            try
+            {
+                if (!File.Exists(BackupFileLocation))
+                {
+                    App.Logger.WriteLine(LOG_IDENT, "Backup file does not exist.");
+                    return false;
+                }
+
+                App.Logger.WriteLine(LOG_IDENT, "Loading from backup...");
+                string json = File.ReadAllText(BackupFileLocation);
+
+                T? settings = JsonSerializer.Deserialize<T>(json, LoadOptions);
+                if (settings is null)
+                    throw new InvalidOperationException("Backup deserialization returned null.");
+
+                Prop = settings;
+                LastFileHash = SafeGetFileHash(BackupFileLocation);
+                App.Logger.WriteLine(LOG_IDENT, "Backup loaded successfully!");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                App.Logger.WriteLine(LOG_IDENT, "Failed to load backup!");
+                App.Logger.WriteException(LOG_IDENT, ex);
+
+                if (alertFailure)
+                {
+                    Frontend.ShowMessageBox($"Failed to load backup settings:\n\n{ex.Message}", MessageBoxImage.Warning);
+                }
+
+                return false;
+            }
+        }
+
         private static string? SafeGetFileHash(string path)
         {
             try
