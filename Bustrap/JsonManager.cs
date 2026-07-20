@@ -266,8 +266,7 @@ namespace Bustrap
             if (!SecurityHelpers.IsPathUnderDirectory(fullPath, baseDir))
                 throw new InvalidOperationException("Backup path escapes the backup directory.");
 
-                return fullPath;
-            }
+            return fullPath;
         }
     }
 }
