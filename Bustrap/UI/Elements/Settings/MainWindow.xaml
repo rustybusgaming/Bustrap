@@ -166,11 +166,6 @@
             </Border>
         </Grid>
 
-        <Canvas x:Name="SnowCanvas"
-                Grid.RowSpan="3"
-                IsHitTestVisible="False"
-                Panel.ZIndex="0" />
-
 
         <Grid x:Name="IntroOverlay"
       Grid.RowSpan="3"

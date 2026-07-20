@@ -23,11 +23,6 @@
             </ui:CardExpander.Header>
             <StackPanel>
 
-                <controls:OptionControl
-            Description="Adds Snow to Bustraps background (Restart Required)"
-            Header="Background Snow">
-                    <ui:ToggleSwitch Background="{DynamicResource SystemAccentBrush}" IsChecked="{Binding Snowww, Mode=TwoWay}" />
-                </controls:OptionControl>
 
                 <controls:OptionControl
             Description="Adds a Gradient Movement with Cursor (Restart Required)"

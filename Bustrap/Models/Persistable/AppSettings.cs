@@ -63,7 +63,6 @@ namespace Bustrap.Models.Persistable
         public bool ShowServerDetailsUI { get; set; } = false;
         public bool EnableCustomStatusDisplay { get; set; } = true;
         public bool RenameClientToEuroTrucks2 { get; set; } = false;
-        public bool SnowWOWSOCOOLWpfSnowbtw { get; set; } = false;
 
         public bool MotionBlurOverlay { get; set; } = false;
 

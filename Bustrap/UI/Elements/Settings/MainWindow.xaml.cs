@@ -36,9 +36,6 @@ namespace Bustrap.UI.Elements.Settings
     {
         private Models.Persistable.WindowState _state => App.State.Prop.SettingsWindow;
         private bool _isSaveAndLaunchClicked = false;
-        private readonly Random _snowRandom = new();
-        private readonly List<Snowflake> _snowflakes = new();
-        private readonly DispatcherTimer _snowTimer;
         private DiscordRpcClient? _discordClient;
         private bool _discordRpcEnabled = App.Settings.Prop.VoidRPC;
         private AppearanceViewModel _appearanceViewModel = null!;
@@ -83,11 +80,6 @@ namespace Bustrap.UI.Elements.Settings
             GlobalSearchBox.LostFocus += GlobalSearchBox_LostFocus;
             // Run the visibility check once instead of polling every 0.8s.
             UpdateFastFlagEditorVisibility();
-            _snowTimer = new DispatcherTimer(DispatcherPriority.Background)
-            {
-                Interval = TimeSpan.FromMilliseconds(33) // ~30 FPS, lighter than the previous 20 FPS loop
-            };
-            _snowTimer.Tick += SnowTimer_Tick;
             _currentBackgroundPath = _appearanceViewModel.BackgroundFilePath;
 
             // _backgroundUpdateTimer kept for the gradient opacity slider, which
@@ -393,7 +385,6 @@ namespace Bustrap.UI.Elements.Settings
             CreateToolItem("Disable Background Window", "Disables Background Window when Launching Roblox");
             CreateToolItem("Disable RobloxCrashHandler", "Disables the RobloxCrashHandler that runs on startup, improving memory and RAM efficiency.");
             CreateToolItem("Exclusive Fullscreen", "Enables exclusive fullscreen mode. This may fix latency issues.");
-            CreateToolItem("Background Snow", "Adds Snow to Bustraps background (Restart Required)");
             CreateToolItem("Gradient Movement", "Adds a Gradient Movement with Cursor (Restart Required)");
             CreateToolItem("Smooth ScrollBar", "Adds a Smooth ScrollBar Movement (Restart Required)");
 
@@ -717,7 +708,6 @@ namespace Bustrap.UI.Elements.Settings
                 case "Disable Background Window": App.Settings.Prop.BackgroundWindow = isOn; break;
                 case "Disable RobloxCrashHandler": App.Settings.Prop.DisableCrash = isOn; break;
                 case "Exclusive Fullscreen": App.Settings.Prop.ExclusiveFullscreen = isOn; break;
-                case "Background Snow": App.Settings.Prop.SnowWOWSOCOOLWpfSnowbtw = isOn; break;
                 case "Gradient Movement": App.Settings.Prop.GRADmentFR = isOn; break;
                 case "Smooth ScrollBar": App.Settings.Prop.SmooothBARRyesirikikthxlucipook = isOn; break;
             }
@@ -745,7 +735,6 @@ namespace Bustrap.UI.Elements.Settings
                     "Disable Background Window" => App.Settings.Prop.BackgroundWindow,
                     "Disable RobloxCrashHandler" => App.Settings.Prop.DisableCrash,
                     "Exclusive Fullscreen" => App.Settings.Prop.ExclusiveFullscreen,
-                    "Background Snow" => App.Settings.Prop.SnowWOWSOCOOLWpfSnowbtw,
                     "Gradient Movement" => App.Settings.Prop.GRADmentFR,
                     "Smooth ScrollBar" => App.Settings.Prop.SmooothBARRyesirikikthxlucipook,
                     _ => false
@@ -772,7 +761,6 @@ namespace Bustrap.UI.Elements.Settings
                     case "Disable Background Window": App.Settings.Prop.BackgroundWindow = value; break;
                     case "Disable RobloxCrashHandler": App.Settings.Prop.DisableCrash = value; break;
                     case "Exclusive Fullscreen": App.Settings.Prop.ExclusiveFullscreen = value; break;
-                    case "Background Snow": App.Settings.Prop.SnowWOWSOCOOLWpfSnowbtw = value; break;
                     case "Gradient Movement": App.Settings.Prop.GRADmentFR = value; break;
                     case "Smooth ScrollBar": App.Settings.Prop.SmooothBARRyesirikikthxlucipook = value; break;
                 }
@@ -1389,18 +1377,6 @@ namespace Bustrap.UI.Elements.Settings
             {
                 CompositionTarget.Rendering += CompositionTarget_Rendering;
             }
-            if (App.Settings.Prop.SnowWOWSOCOOLWpfSnowbtw)
-            {
-                InitSnow();
-                _snowTimer.Start();
-                if (SnowCanvas != null)
-                    SnowCanvas.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                if (SnowCanvas != null)
-                    SnowCanvas.Visibility = Visibility.Collapsed;
-            }
 
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
 
@@ -1433,114 +1409,6 @@ namespace Bustrap.UI.Elements.Settings
             IntroOverlay.Opacity = 1.0;
         }
 
-        private Size _lastSnowCanvasSize = Size.Empty;
-        private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
-        {
-            if (SnowCanvas == null)
-                return;
-
-            var newSize = new Size(SnowCanvas.ActualWidth, SnowCanvas.ActualHeight);
-            if (newSize.Width <= 0 || newSize.Height <= 0)
-                return;
-            const double minDelta = 20.0;
-            if (Math.Abs(newSize.Width - _lastSnowCanvasSize.Width) < minDelta &&
-                Math.Abs(newSize.Height - _lastSnowCanvasSize.Height) < minDelta)
-                return;
-
-            _lastSnowCanvasSize = newSize;
-            InitSnow();
-        }
-
-        private const int FlakeCount = 30;
-        private void InitSnow()
-        {
-            if (SnowCanvas == null) return;
-
-            double width = SnowCanvas.ActualWidth;
-            double height = SnowCanvas.ActualHeight;
-
-            if (width <= 0 || height <= 0)
-                return;
-
-            if (_snowflakes.Count == FlakeCount)
-                return;
-
-            _snowflakes.Clear();
-            SnowCanvas.Children.Clear();
-
-            for (int i = 0; i < FlakeCount; i++)
-            {
-                double size = _snowRandom.Next(2, 6);
-                var ellipse = new Ellipse
-                {
-                    Width = size,
-                    Height = size,
-                    Fill = Brushes.White,
-                    Opacity = _snowRandom.NextDouble() * 0.6 + 0.3
-                };
-                SnowCanvas.Children.Add(ellipse);
-
-                _snowflakes.Add(new Snowflake
-                {
-                    Shape = ellipse,
-                    X = _snowRandom.NextDouble() * width,
-                    Y = _snowRandom.NextDouble() * height,
-                    SpeedY = 0.7 + _snowRandom.NextDouble() * 1.5,
-                    DriftX = -0.3 + _snowRandom.NextDouble() * 0.6,
-                    Size = size
-                });
-            }
-        }
-
-        private void UpdateSnow()
-        {
-            if (SnowCanvas == null) return;
-
-            double width = SnowCanvas.ActualWidth;
-            double height = SnowCanvas.ActualHeight;
-
-            for (int i = 0; i < _snowflakes.Count; i++)
-            {
-                var flake = _snowflakes[i];
-                flake.Y += flake.SpeedY;
-                flake.X += flake.DriftX;
-
-                if (flake.Y > height + flake.Size) flake.Y = -flake.Size;
-                if (flake.X < -flake.Size) flake.X = width + flake.Size;
-                else if (flake.X > width + flake.Size) flake.X = -flake.Size;
-
-                Canvas.SetLeft(flake.Shape, flake.X);
-                Canvas.SetTop(flake.Shape, flake.Y);
-            }
-        }
-
-        private void SnowTimer_Tick(object? sender, EventArgs e)
-        {
-            UpdateSnow();
-        }
-
-        protected override void OnActivated(EventArgs e)
-        {
-            base.OnActivated(e);
-            if (App.Settings.Prop.SnowWOWSOCOOLWpfSnowbtw)
-                _snowTimer.Start();
-        }
-
-        protected override void OnDeactivated(EventArgs e)
-        {
-            base.OnDeactivated(e);
-            _snowTimer.Stop();
-        }
-
-        private sealed class Snowflake
-        {
-            public Ellipse Shape { get; set; } = null!;
-            public double X { get; set; }
-            public double Y { get; set; }
-            public double SpeedY { get; set; }
-            public double DriftX { get; set; }
-            public double Size { get; set; }
-        }
 
         #region Initialization
 

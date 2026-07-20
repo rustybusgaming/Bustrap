@@ -72,12 +72,6 @@ namespace Bustrap.UI.ViewModels.Settings
             PopulateCustomThemes();
         }
 
-        public bool Snowww
-        {
-            get => App.Settings.Prop.SnowWOWSOCOOLWpfSnowbtw;
-            set => App.Settings.Prop.SnowWOWSOCOOLWpfSnowbtw = value;
-        }
-
         public bool GRADmentFR
         {
             get => App.Settings.Prop.GRADmentFR;
