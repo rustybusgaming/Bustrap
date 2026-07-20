@@ -1409,6 +1409,12 @@ namespace Bustrap.UI.Elements.Settings
             IntroOverlay.Opacity = 1.0;
         }
 
+        private void MainWindow_SizeChanged(object? sender, SizeChangedEventArgs e)
+        {
+            // This event is subscribed but currently unused after snow removal.
+            // Kept for potential future use or background resizing logic.
+        }
+
 
         #region Initialization
 
