@@ -43,16 +43,9 @@ namespace Bustrap.UI.Elements.Settings
         private string? _currentBackgroundPath;
         private FileSystemWatcher? _appearanceViewModelWatcher;
         private bool _spotifyInitialized = false;
-        private Vector _currentOffset;
-        private Vector _targetOffset;
-        private double _currentRotation;
-        private double _targetRotation;
         private DispatcherTimer? _searchDebounceTimer;
         private List<TextBlock> _allTextBlocksCache = new List<TextBlock>();
         private Page? _lastPage = null;
-        private const double MaxOffset = 0.04;
-        private const double MaxRotation = 5.0;
-        private const double FollowSpeed = 0.035;
         private readonly Dictionary<Wpf.Ui.Controls.NavigationItem, Wpf.Ui.Common.SymbolRegular> _defaultIcons = new();
         private string TabsConfigPath => Path.Combine(Paths.Base, "TabsConfig.json");
         private readonly List<Type> _pagesToHideSearchBox = new List<Type> // idfk my lazy bum ass didnt wanna spent 4000hours tranna figure another way for all tis bullshit of work took me 1 day for this shit FAHHHHHHHHHH WSEIEWMIEWOMHGEW
@@ -385,7 +378,6 @@ namespace Bustrap.UI.Elements.Settings
             CreateToolItem("Disable Background Window", "Disables Background Window when Launching Roblox");
             CreateToolItem("Disable RobloxCrashHandler", "Disables the RobloxCrashHandler that runs on startup, improving memory and RAM efficiency.");
             CreateToolItem("Exclusive Fullscreen", "Enables exclusive fullscreen mode. This may fix latency issues.");
-            CreateToolItem("Gradient Movement", "Adds a Gradient Movement with Cursor (Restart Required)");
             CreateToolItem("Smooth ScrollBar", "Adds a Smooth ScrollBar Movement (Restart Required)");
 
             toolboxWindow.ShowDialog();
@@ -708,7 +700,6 @@ namespace Bustrap.UI.Elements.Settings
                 case "Disable Background Window": App.Settings.Prop.BackgroundWindow = isOn; break;
                 case "Disable RobloxCrashHandler": App.Settings.Prop.DisableCrash = isOn; break;
                 case "Exclusive Fullscreen": App.Settings.Prop.ExclusiveFullscreen = isOn; break;
-                case "Gradient Movement": App.Settings.Prop.GRADmentFR = isOn; break;
                 case "Smooth ScrollBar": App.Settings.Prop.SmooothBARRyesirikikthxlucipook = isOn; break;
             }
         }
@@ -735,7 +726,6 @@ namespace Bustrap.UI.Elements.Settings
                     "Disable Background Window" => App.Settings.Prop.BackgroundWindow,
                     "Disable RobloxCrashHandler" => App.Settings.Prop.DisableCrash,
                     "Exclusive Fullscreen" => App.Settings.Prop.ExclusiveFullscreen,
-                    "Gradient Movement" => App.Settings.Prop.GRADmentFR,
                     "Smooth ScrollBar" => App.Settings.Prop.SmooothBARRyesirikikthxlucipook,
                     _ => false
                 };
@@ -1228,38 +1218,6 @@ namespace Bustrap.UI.Elements.Settings
             }
         }
 
-        private void RootGrid_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (sender is not FrameworkElement fe)
-                return;
-
-            var pos = e.GetPosition(fe);
-            var nx = (pos.X / fe.ActualWidth - 0.5) * 2;
-            var ny = (pos.Y / fe.ActualHeight - 0.5) * 2;
-
-            _targetOffset = new Vector(
-                nx * MaxOffset,
-                ny * MaxOffset
-            );
-
-            _targetRotation = nx * MaxRotation;
-        }
-
-        private void RootGrid_MouseLeave(object sender, MouseEventArgs e)
-        {
-            _targetOffset = new Vector(0, 0); // blah this just resets the values all back to normal value 0 :)
-            _targetRotation = 0;
-        }
-
-        private void CompositionTarget_Rendering(object? sender, EventArgs e)
-        {
-            _currentOffset += (_targetOffset - _currentOffset) * FollowSpeed;
-            _currentRotation += (_targetRotation - _currentRotation) * FollowSpeed;
-
-            BackgroundGradientTranslate.X = _currentOffset.X;
-            BackgroundGradientTranslate.Y = _currentOffset.Y;
-            BackgroundGradientRotate.Angle = _currentRotation;
-        }
 
         private void InitializeDiscordRPC()
         {
@@ -1373,10 +1331,6 @@ namespace Bustrap.UI.Elements.Settings
         {
             LoadTabsStructure();
             InitializeNavigation();
-            if (App.Settings.Prop.GRADmentFR)
-            {
-                CompositionTarget.Rendering += CompositionTarget_Rendering;
-            }
 
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
 
@@ -1519,7 +1473,6 @@ namespace Bustrap.UI.Elements.Settings
 
         private void WpfUiWindow_Closed(object sender, EventArgs e)
         {
-            CompositionTarget.Rendering -= CompositionTarget_Rendering;
             if (App.LaunchSettings.TestModeFlag.Active)
                 LaunchHandler.LaunchRoblox(LaunchMode.Player);
             else
