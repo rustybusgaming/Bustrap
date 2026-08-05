@@ -1218,6 +1218,27 @@ namespace Bustrap.UI.Elements.Settings
             }
         }
 
+        private void RootGrid_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!App.Settings.Prop.GRADmentFR || sender is not FrameworkElement element ||
+                element.ActualWidth <= 0 || element.ActualHeight <= 0)
+                return;
+
+            Point position = e.GetPosition(element);
+            double horizontalOffset = (position.X / element.ActualWidth - 0.5) * 0.08;
+            double verticalOffset = (position.Y / element.ActualHeight - 0.5) * 0.08;
+
+            BackgroundGradientTranslate.X = horizontalOffset;
+            BackgroundGradientTranslate.Y = verticalOffset;
+            BackgroundGradientRotate.Angle = horizontalOffset * 50;
+        }
+
+        private void RootGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            BackgroundGradientTranslate.X = 0;
+            BackgroundGradientTranslate.Y = 0;
+            BackgroundGradientRotate.Angle = 0;
+        }
 
         private void InitializeDiscordRPC()
         {

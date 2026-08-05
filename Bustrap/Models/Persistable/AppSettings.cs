@@ -143,6 +143,7 @@ namespace Bustrap.Models.Persistable
         public long? TargetUniverseId { get; set; }
         public bool IsBetterServersEnabled { get; set; } = false;
         public bool OverClockGPU { get; set; } = false;
+        public bool GRADmentFR { get; set; } = false;
         public bool VoidRPC { get; set; } = true;
 
 
