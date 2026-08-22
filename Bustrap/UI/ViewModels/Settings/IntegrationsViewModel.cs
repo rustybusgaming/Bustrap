@@ -18,6 +18,7 @@ namespace Bustrap.UI.ViewModels.Settings
         public ICommand DeleteIntegrationCommand => new RelayCommand(DeleteIntegration);
         public ICommand BrowseIntegrationLocationCommand => new RelayCommand(BrowseIntegrationLocation);
         public ICommand OpenHistoryWindowCommand { get; }
+        public ICommand MusicWindowCommand { get; }
         public ICommand ChatModeWindowCommand { get; }
         public ICommand RPCWindowCommand { get; }
         public ICommand AccountWindowCommand { get; }
@@ -35,6 +36,7 @@ namespace Bustrap.UI.ViewModels.Settings
             LoadSettings();
 
             OpenHistoryWindowCommand = new RelayCommand(OpenHistoryWindow);
+            MusicWindowCommand = new RelayCommand(MusicPlayerWindow);
             ChatModeWindowCommand = new RelayCommand(ChatModeWindow);
             RPCWindowCommand = new RelayCommand(RPCUIWindow);
             AccountWindowCommand = new RelayCommand(AccountWindow);
@@ -124,6 +126,12 @@ namespace Bustrap.UI.ViewModels.Settings
             historyWindow.Show();
         }
 
+        private void MusicPlayerWindow()
+        {
+            var musicPlayerWindow = new MusicPlayer(_watcher);
+            musicPlayerWindow.Show();
+        }
+
         private void ChatModeWindow()
         {
             var historyWindow = new DiscordChatWindow();
@@ -209,6 +217,12 @@ namespace Bustrap.UI.ViewModels.Settings
         {
             get => App.Settings.Prop.NotificationWindowShow;
             set => App.Settings.Prop.NotificationWindowShow = value;
+        }
+
+        public bool SongChangeNotification
+        {
+            get => App.Settings.Prop.SongChangeNotification;
+            set => App.Settings.Prop.SongChangeNotification = value;
         }
 
         public string gamename

@@ -190,6 +190,7 @@ namespace Bustrap
 
             // Dynamic Render Resolution
             { "Rendering.Dynamic.Resolution","DFIntDebugDynamicRenderKiloPixels"},
+            { "Rendering.Dynamic.Enabled","FFlagRenderDynamicResolutionScale12"},
 
             // Rendering engines
             { "Rendering.Mode.DisableD3D11", "FFlagDebugGraphicsDisableDirect3D11" },
@@ -529,7 +530,7 @@ namespace Bustrap
             { DynamicResolution.Resolution6, "2074" },
             { DynamicResolution.Resolution7, "3686" },
             { DynamicResolution.Resolution8, "8294" },
-            { DynamicResolution.Resolution9, "33178 " },
+            { DynamicResolution.Resolution9, "33178" },
         };
 
         public static IReadOnlyDictionary<TextureQuality, string?> TextureQualityLevels => new Dictionary<TextureQuality, string?>

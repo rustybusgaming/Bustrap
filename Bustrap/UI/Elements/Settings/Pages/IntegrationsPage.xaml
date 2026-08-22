@@ -69,6 +69,12 @@
         </controls:OptionControl>
 
         <controls:OptionControl
+    Description="Shows the track name in the top-right corner when Spotify, TIDAL or Apple Music starts a new song. Other players, including browsers, are ignored."
+    Header="Song-Change Notification">
+            <ui:ToggleSwitch Background="{DynamicResource SystemAccentBrush}" IsChecked="{Binding SongChangeNotification, Mode=TwoWay}" />
+        </controls:OptionControl>
+
+        <controls:OptionControl
             Description="{x:Static resources:Strings.Menu_Integrations_PlayerMessageLogs_Description}"
             Header="{x:Static resources:Strings.Menu_Integrations_PlayerMessageLogs_Title}"
             IsEnabled="{Binding InnerContent.IsChecked, ElementName=ActivityTrackingOption, Mode=OneWay}">
@@ -151,6 +157,16 @@
             Text="Learn how to setup the chatbot to chat with your friends on Discord." />
                     </StackPanel>
                 </ui:CardAction>
+
+
+                <controls:OptionControl
+    Header="View Music Player"
+    Description="View and listen to your music, or manage from the tray menu.">
+                    <Button Content="View" 
+            Command="{Binding MusicWindowCommand}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"/>
+                </controls:OptionControl>
 
             </StackPanel>
         </Expander>
