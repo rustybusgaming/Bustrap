@@ -851,6 +851,22 @@ namespace Bustrap.UI.ViewModels.Settings
             }
         }
 
+        /// <summary>
+        /// Roblox's own dynamic resolution scaling. Left unset the client
+        /// decides; one of the bundled preset packs (Stoof High Graphics V31)
+        /// turns it off, which is worth being able to see and undo now that the
+        /// render resolution below is exposed.
+        /// </summary>
+        public bool DynamicResolutionScaling
+        {
+            get => App.FastFlags.GetPreset("Rendering.Dynamic.Enabled") != "False";
+            set
+            {
+                App.FastFlags.SetPreset("Rendering.Dynamic.Enabled", value ? null : "False");
+                OnPropertyChanged();
+            }
+        }
+
         public IReadOnlyDictionary<DynamicResolution, string?> DynamicResolutions => FastFlagManager.DynamicResolutions;
 
         public DynamicResolution SelectedDynamicResolution

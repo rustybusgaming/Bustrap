@@ -418,6 +418,12 @@ Margin="8,0,8,0" />
                 </controls:OptionControl>
 
                 <controls:OptionControl
+                    Description="Lets Roblox vary the render resolution on its own to hold framerate. Some preset flag packs switch this off; turning it back on here clears their override."
+                    Header="Dynamic resolution scaling">
+                    <ui:ToggleSwitch IsChecked="{Binding DynamicResolutionScaling, Mode=TwoWay}" />
+                </controls:OptionControl>
+
+                <controls:OptionControl
                     Description="Renders the game at a lower internal resolution and scales it back up to fill the window. Lower settings trade sharpness for a large framerate gain. Default hands the resolution back to Roblox."
                     Header="Render resolution (upscaling)">
                     <ComboBox

@@ -190,6 +190,7 @@ namespace Bustrap
 
             // Dynamic Render Resolution
             { "Rendering.Dynamic.Resolution","DFIntDebugDynamicRenderKiloPixels"},
+            { "Rendering.Dynamic.Enabled","FFlagRenderDynamicResolutionScale12"},
 
             // Rendering engines
             { "Rendering.Mode.DisableD3D11", "FFlagDebugGraphicsDisableDirect3D11" },
