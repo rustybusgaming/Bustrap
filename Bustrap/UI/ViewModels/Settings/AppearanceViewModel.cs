@@ -72,10 +72,10 @@ namespace Bustrap.UI.ViewModels.Settings
             PopulateCustomThemes();
         }
 
-        public bool GRADmentFR
+        public bool GradientMovement
         {
-            get => App.Settings.Prop.GRADmentFR;
-            set => App.Settings.Prop.GRADmentFR = value;
+            get => App.Settings.Prop.GradientMovement;
+            set => App.Settings.Prop.GradientMovement = value;
         }
 
         public bool ClearFont
@@ -84,10 +84,10 @@ namespace Bustrap.UI.ViewModels.Settings
             set => App.Settings.Prop.ClearFont = value;
         }
 
-        public bool SmooothBARRyesirikikthxlucipook
+        public bool SmoothScrollBar
         {
-            get => App.Settings.Prop.SmooothBARRyesirikikthxlucipook;
-            set => App.Settings.Prop.SmooothBARRyesirikikthxlucipook = value;
+            get => App.Settings.Prop.SmoothScrollBar;
+            set => App.Settings.Prop.SmoothScrollBar = value;
         }
 
         #region Properties
@@ -355,7 +355,10 @@ namespace Bustrap.UI.ViewModels.Settings
                 Directory.CreateDirectory(Paths.Base);
                 foreach (var old in Directory.GetFiles(Paths.Base, "startup_audio.*"))
                 {
-                    try { File.Delete(old); } catch { }
+                    try { File.Delete(old); } catch (Exception ex)
+                    {
+                        App.Logger.WriteException("AppearanceViewModel::ImportStartupAudio", ex);
+                    }
                 }
                 string newFileName = "startup_audio" + Path.GetExtension(selectedPath);
                 string newPath = Path.Combine(Paths.Base, newFileName);
@@ -374,7 +377,10 @@ namespace Bustrap.UI.ViewModels.Settings
             {
                 foreach (var old in Directory.GetFiles(Paths.Base, "startup_audio.*"))
                 {
-                    try { File.Delete(old); } catch { }
+                    try { File.Delete(old); } catch (Exception error)
+                    {
+                        App.Logger.WriteException("AppearanceViewModel::RemoveStartupAudio", error);
+                    }
                 }
 
                 AudioEvents.RaiseStartupAudioChanged(null);
@@ -516,7 +522,10 @@ namespace Bustrap.UI.ViewModels.Settings
                 Directory.CreateDirectory(Paths.Base);
                 foreach (var old in Directory.GetFiles(Paths.Base, "bootstrapper_bg.*"))
                 {
-                    try { File.Delete(old); } catch { }
+                    try { File.Delete(old); } catch (Exception error)
+                    {
+                        App.Logger.WriteException("AppearanceViewModel::ImportBackground", error);
+                    }
                 }
                 string newFileName = "bootstrapper_bg" + Path.GetExtension(selectedPath);
                 string newPath = Path.Combine(Paths.Base, newFileName);
@@ -541,7 +550,10 @@ namespace Bustrap.UI.ViewModels.Settings
             {
                 foreach (var old in Directory.GetFiles(Paths.Base, "bootstrapper_bg.*"))
                 {
-                    try { File.Delete(old); } catch { }
+                    try { File.Delete(old); } catch (Exception error)
+                    {
+                        App.Logger.WriteException("AppearanceViewModel::RemoveBackground", error);
+                    }
                 }
                 BackgroundEvents.RaiseBackgroundChanged(null);
             }

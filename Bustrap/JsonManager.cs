@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Windows;
@@ -63,6 +64,8 @@ namespace Bustrap
                     throw new InvalidOperationException("Deserialization returned null.");
 
                 Prop = settings;
+
+                ApplyMigrations(json, LOG_IDENT);
 
                 LastFileHash = SafeGetFileHash(FileLocation);
                 App.Logger.WriteLine(LOG_IDENT, "Loaded successfully!");
@@ -151,6 +154,29 @@ namespace Bustrap
             }
         }
 
+        /// <summary>
+        /// Lets settings pick up values stored under names an older build used,
+        /// so renaming a property doesn't quietly reset it for everyone.
+        /// </summary>
+        private void ApplyMigrations(string json, string logIdent)
+        {
+            if (Prop is not IMigratableSettings migratable)
+                return;
+
+            try
+            {
+                if (JsonNode.Parse(json) is not JsonObject raw || !migratable.Migrate(raw))
+                    return;
+
+                App.Logger.WriteLine(logIdent, "Carried over values saved under older names, rewriting file.");
+                Save();
+            }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException($"{LOG_IDENT_CLASS}::ApplyMigrations", ex);
+            }
+        }
+
         private bool TryLoadBackup(string logIdent, bool alertFailure)
         {
             string LOG_IDENT = $"{LOG_IDENT_CLASS}::TryLoadBackup";
@@ -171,6 +197,9 @@ namespace Bustrap
                     throw new InvalidOperationException("Backup deserialization returned null.");
 
                 Prop = settings;
+
+                ApplyMigrations(json, LOG_IDENT);
+
                 LastFileHash = SafeGetFileHash(BackupFileLocation);
                 App.Logger.WriteLine(LOG_IDENT, "Backup loaded successfully!");
                 return true;

@@ -75,18 +75,32 @@ public static class GithubUpdater
         string tempDir = Path.Combine(Path.GetTempPath(), "Bustrap_Update");
         Directory.CreateDirectory(tempDir);
 
-        string exePath = Path.Combine(tempDir, name);
-        var bytes = await http.GetByteArrayAsync(url);
-        await File.WriteAllBytesAsync(exePath, bytes);
+        string staged = Path.Combine(tempDir, name);
+        await File.WriteAllBytesAsync(staged, await http.GetByteArrayAsync(url));
 
         string currentExe = Environment.ProcessPath!;
         string backupExe = currentExe + ".old";
-        if (File.Exists(backupExe)) File.Delete(backupExe);
-        File.Move(currentExe, backupExe);
-        File.Copy(exePath, currentExe, true);
 
-        RestartAfterUpdate(currentExe);
-        return true;
+        if (File.Exists(backupExe))
+            File.Delete(backupExe);
+
+        // Windows lets a running executable be renamed but not deleted, so the
+        // old build is moved aside instead of overwritten. If putting the new
+        // build down then fails, that move HAS to be undone - otherwise the
+        // install is left with no executable and the next launch finds nothing.
+        File.Move(currentExe, backupExe);
+
+        try
+        {
+            File.Copy(staged, currentExe, true);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            App.Logger.WriteException("GitHubUpdater::UpdateExe", ex);
+            Rollback(backupExe, currentExe);
+            return false;
+        }
     }
 
     private static async Task<bool> UpdateZip(string url, string name)
@@ -97,25 +111,52 @@ public static class GithubUpdater
         Directory.CreateDirectory(tempDir);
 
         string zipPath = Path.Combine(tempDir, name);
-        var bytes = await http.GetByteArrayAsync(url);
-        await File.WriteAllBytesAsync(zipPath, bytes);
+        await File.WriteAllBytesAsync(zipPath, await http.GetByteArrayAsync(url));
 
         string extractPath = Path.Combine(tempDir, "Extracted");
-        if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
+        if (Directory.Exists(extractPath))
+            Directory.Delete(extractPath, true);
         ExtractZipSafely(zipPath, extractPath);
 
         string currentDir = AppContext.BaseDirectory;
-        foreach (string file in Directory.GetFiles(extractPath, "*", SearchOption.AllDirectories))
-        {
-            string relative = Path.GetRelativePath(extractPath, file);
-            string dest = Path.Combine(currentDir, relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-            File.Copy(file, dest, true);
-        }
 
-        string mainExe = Path.Combine(currentDir, "Bustrap.exe");
-        RestartAfterUpdate(mainExe);
-        return true;
+        // Same problem as the single-exe path, spread over many files: a
+        // failure partway through would leave a half-old half-new install.
+        // Everything replaced is moved aside first so it can all be put back.
+        var moved = new List<(string Destination, string Backup)>();
+
+        try
+        {
+            foreach (string file in Directory.GetFiles(extractPath, "*", SearchOption.AllDirectories))
+            {
+                string relative = Path.GetRelativePath(extractPath, file);
+                string dest = Path.Combine(currentDir, relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+
+                if (File.Exists(dest))
+                {
+                    string backup = dest + ".old";
+                    if (File.Exists(backup))
+                        File.Delete(backup);
+
+                    File.Move(dest, backup);
+                    moved.Add((dest, backup));
+                }
+
+                File.Copy(file, dest, true);
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            App.Logger.WriteException("GitHubUpdater::UpdateZip", ex);
+
+            foreach (var (destination, backup) in moved)
+                Rollback(backup, destination);
+
+            return false;
+        }
     }
 
     private static void ExtractZipSafely(string zipPath, string extractPath)
@@ -134,16 +175,26 @@ public static class GithubUpdater
         }
     }
 
-    private static void RestartAfterUpdate(string exePath)
+    private static void Rollback(string backup, string destination)
     {
-        Task.Delay(800).ContinueWith(_ =>
+        try
         {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = exePath,
-                UseShellExecute = true
-            });
-            Environment.Exit(0);
-        });
+            if (File.Exists(destination))
+                File.Delete(destination);
+
+            File.Move(backup, destination);
+        }
+        catch (Exception ex)
+        {
+            // Nothing left to fall back on. The user has to know, because the
+            // install is now missing a file it needs to start.
+            App.Logger.WriteException("GitHubUpdater::Rollback", ex);
+            Frontend.ShowMessageBox(
+                $"Bustrap could not finish updating and could not restore the previous version.\n\n" +
+                $"The previous build is still on disk at:\n{backup}\n\n" +
+                $"Rename it back to:\n{destination}\n\n" +
+                $"or reinstall Bustrap from the website.",
+                System.Windows.MessageBoxImage.Error);
+        }
     }
 }

@@ -32,7 +32,7 @@ namespace Bustrap.UI.ViewModels.ContextMenu
         }
 
         public Visibility ServerLocationVisibility => App.Settings.Prop.ShowServerDetails ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility ServerUptimeVisibility => App.Settings.Prop.ServerUptimeBetterBLOXcuzitsbetterXD ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility ServerUptimeVisibility => App.Settings.Prop.ShowServerUptime ? Visibility.Visible : Visibility.Collapsed;
 
         private string _username = Strings.Common_Loading;
         public string Username

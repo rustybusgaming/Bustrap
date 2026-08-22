@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.Json.Nodes;
 using Bustrap.Enums;
 
 namespace Bustrap.Models.Persistable
@@ -7,7 +8,7 @@ namespace Bustrap.Models.Persistable
     /// <summary>
     /// Represents configuration settings for Bustrap.
     /// </summary>
-    public class AppSettings
+    public class AppSettings : IMigratableSettings
     {
         // General Configuration
         public BootstrapperStyle BootstrapperStyle { get; set; } = BootstrapperStyle.FluentAeroDialog;
@@ -20,9 +21,6 @@ namespace Bustrap.Models.Persistable
         public string? SelectedCustomTheme { get; set; } = null;
         public bool CheckForUpdates { get; set; } = true;
         public string SelectedCpuPriority { get; set; } = "Automatic";
-        public int MaxCpuCores { get; set; } = Environment.ProcessorCount;
-        public int TotalLogicalCores { get; set; } = Environment.ProcessorCount;
-        public int TotalPhysicalCores { get; set; } = Environment.ProcessorCount;
         public bool IsChannelEnabled { get; set; } = false;
         public bool UpdateRoblox { get; set; } = true;
 
@@ -33,21 +31,16 @@ namespace Bustrap.Models.Persistable
         public string UseCustomIcon { get; set; } = "";
         public string CustomGameName { get; set; } = "";
         public string PriorityLimit { get; set; } = "Normal";
-        public string SelectedStatus { get; set; } = "Gray";
         public string ArrowCursorSelectedPath { get; set; } = "";
         public string ArrowFarCursorSelectedPath { get; set; } = "";
         public string IBeamCursorSelectedPath { get; set; } = "";
 
-        public bool DisableSplashScreen { get; set; } = true;
         public bool EnableAnalytics { get; set; } = true;
-        public bool ShouldExportConfig { get; set; } = true;
-        public bool ShouldExportLogs { get; set; } = true;
         public bool UseFastFlagManager { get; set; } = true;
         public bool WPFSoftwareRender { get; set; } = false;
         public bool ConfirmLaunches { get; set; } = true;
 
-        public bool SmooothBARRyesirikikthxlucipook { get; set; } = false; // wanna keep this on false so people may not be annoyed by it being on
-        public bool HasLaunchedGame { get; set; } = false;
+        public bool SmoothScrollBar { get; set; } = false; // wanna keep this on false so people may not be annoyed by it being on
         public bool NotificationWindowShow { get; set; } = true;
         public bool BackgroundWindow { get; set; } = true;
         public bool UsePlaceId { get; set; } = false;
@@ -57,22 +50,18 @@ namespace Bustrap.Models.Persistable
         public bool Fleasion { get; set; } = false;
         public string PlaceId { get; set; } = "";
         public bool OptimizeRoblox { get; set; } = false;
-        public bool BackgroundUpdatesEnabled { get; set; } = true;
         public bool VoidNotify { get; set; } = true;
         public bool ServerPingCounter { get; set; } = false;
         public bool ShowServerDetailsUI { get; set; } = false;
-        public bool EnableCustomStatusDisplay { get; set; } = true;
         public bool RenameClientToEuroTrucks2 { get; set; } = false;
 
         public bool MotionBlurOverlay { get; set; } = false;
 
-        public string ClientPath { get; set; } = Path.Combine(Paths.Base, "Roblox", "Player");
 
         public string Locale { get; set; } = "nil";
         public string BufferSizeKbte { get; set; } = "1024";
-        public string BufferSizeKbtes { get; set; } = "2048";
+        public string BufferSizeKilobytes { get; set; } = "2048";
         public string SkyboxName { get; set; } = "Default";
-        public string FontName { get; set; } = "Default";
         public string LastServerSave { get; set; } = "112757576021097";
         public bool SkyBoxDataSending { get; set; } = false;
 
@@ -90,14 +79,10 @@ namespace Bustrap.Models.Persistable
         public bool IngameChatDiscord { get; set; } = false;
 
         // Analytics & Tracking
-        public bool DarkTextures { get; set; } = false;
         public bool EnableActivityTracking { get; set; } = true;
-        public bool OverClockCPU { get; set; } = false;
-        public bool exitondissy { get; set; } = false;
-        public bool ServerUptimeBetterBLOXcuzitsbetterXD { get; set; } = true;
+        public bool ShowServerUptime { get; set; } = true;
 
         public string DownloadingStringFormat { get; set; } = Strings.Bootstrapper_Status_Downloading + " {0} - {1}MB / {2}MB";
-        public bool ConnectCloset { get; set; } = false;
 
         public bool Fullbright { get; set; } = false;
 
@@ -124,7 +109,6 @@ namespace Bustrap.Models.Persistable
         public double Brightness { get; set; } = 50;
 
         // Mod Settings
-        public string CustomFontLocation { get; set; } = string.Empty;
         public CursorType CursorType { get; set; } = CursorType.Default;
 
         // Custom Integrations
@@ -135,19 +119,63 @@ namespace Bustrap.Models.Persistable
 
         // Roblox Deployment Settings
         public string Channel { get; set; } = RobloxInterfaces.Deployment.DefaultChannel;
-        public string ChannelHash { get; set; } = "";
 
         public string LaunchGameID { get; set; } = "";
         public bool IsGameEnabled { get; set; } = false;
         public bool MatchUniverseId { get; set; } = true;
         public long? TargetUniverseId { get; set; }
         public bool IsBetterServersEnabled { get; set; } = false;
-        public bool OverClockGPU { get; set; } = false;
-        public bool GRADmentFR { get; set; } = false;
+        public bool GradientMovement { get; set; } = false;
         public bool VoidRPC { get; set; } = true;
 
 
         public ResolutionSetting? InGameResolution { get; set; }
+
+        /// <summary>
+        /// Values written by builds that used the old property names. Without
+        /// this a rename silently resets the setting for everyone who upgrades.
+        /// </summary>
+        public bool Migrate(JsonObject raw)
+        {
+            bool changed = false;
+
+            changed |= CarryOver<bool>(raw, "SmooothBARRyesirikikthxlucipook",
+                nameof(SmoothScrollBar), value => SmoothScrollBar = value);
+
+            changed |= CarryOver<string>(raw, "BufferSizeKbtes",
+                nameof(BufferSizeKilobytes), value => BufferSizeKilobytes = value);
+
+            changed |= CarryOver<bool>(raw, "ServerUptimeBetterBLOXcuzitsbetterXD",
+                nameof(ShowServerUptime), value => ShowServerUptime = value);
+
+            changed |= CarryOver<bool>(raw, "GRADmentFR",
+                nameof(GradientMovement), value => GradientMovement = value);
+
+            return changed;
+        }
+
+        private static bool CarryOver<TValue>(JsonObject raw, string legacyName, string currentName, Action<TValue> apply)
+        {
+            // a file already written by a current build wins - the legacy key
+            // may still be sitting there from a config that was hand-edited
+            if (raw.ContainsKey(currentName))
+                return false;
+
+            if (!raw.TryGetPropertyValue(legacyName, out JsonNode? node) || node is null)
+                return false;
+
+            try
+            {
+                // throws if the stored value isn't the type the property expects
+                apply(node.GetValue<TValue>());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException($"AppSettings::CarryOver({legacyName})", ex);
+                return false;
+            }
+        }
 
         public class ResolutionSetting
         {

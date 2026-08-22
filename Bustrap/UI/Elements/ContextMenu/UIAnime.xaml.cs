@@ -43,7 +43,10 @@ namespace Bustrap.UI.Elements.Overlay
                 {
                     this.DragMove();
                 }
-                catch {}
+                catch (Exception ex)
+                {
+                    App.Logger.WriteException("AnimeWindow::DragWindow", ex);
+                }
             }
         }
 
@@ -62,7 +65,10 @@ namespace Bustrap.UI.Elements.Overlay
                 string data = $"{this.Left},{this.Top}";
                 File.WriteAllText(saveFilePath, data);
             }
-            catch {}
+            catch (Exception ex)
+            {
+                App.Logger.WriteException("AnimeWindow::SaveWindowPosition", ex);
+            }
         }
 
         private void LoadWindowPosition()
@@ -300,7 +306,10 @@ namespace Bustrap.UI.Elements.Overlay
                         .ToTitleCase(slug.Replace("-", " "));
                 }
             }
-            catch { }
+            catch (Exception error)
+            {
+                App.Logger.WriteException("AnimeWindow::GetAnimeTitleFromUrl", error);
+            }
             return "AniWatch - Home";
         }
 
@@ -315,7 +324,10 @@ namespace Bustrap.UI.Elements.Overlay
                     return $"https://aniwatchtv.to/{segments[1]}";
                 }
             }
-            catch { }
+            catch (Exception error)
+            {
+                App.Logger.WriteException("AnimeWindow::GetAnimeDetailsUrl", error);
+            }
             return url;
         }
 
@@ -473,7 +485,10 @@ namespace Bustrap.UI.Elements.Overlay
                             notificationWindow.ShowNotification("Press 'ESC' To Exit Fullscreen!", "https://online.fliphtml5.com/rxkgl/rnfj/files/large/95e7a87a9e858ca0085f76054ed3a16d.webp?1701104491", 4
                             );
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            App.Logger.WriteException("AnimeWindow::FullscreenButton_Click", ex);
+                        }
                     });
                 }
             }

@@ -26,8 +26,9 @@ namespace Bustrap.UI
             try
             {
             }
-            catch
+            catch (Exception ex)
             {
+                App.Logger.WriteException("Frontend::ShowPlayerErrorDialog", ex);
             }
         }
 

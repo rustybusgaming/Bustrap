@@ -88,7 +88,10 @@ namespace Bustrap.UI.Elements.ContextMenu
 
             for (int i = maxBackups; i < files.Count; i++)
             {
-                try { files[i].Delete(); } catch { }
+                try { files[i].Delete(); } catch (Exception error)
+                {
+                    App.Logger.WriteException("CustomThemeEditor::CleanupOldBackups", error);
+                }
             }
         }
 
@@ -299,8 +302,9 @@ namespace Bustrap.UI.Elements.ContextMenu
                 CodeEditor.ScrollTo(lineNumber, 0);
                 CodeEditor.CaretOffset = line.Offset;
             }
-            catch
+            catch (Exception error)
             {
+                App.Logger.WriteException("CustomThemeEditor::HighlightErrorLine", error);
             }
         }
 

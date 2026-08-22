@@ -6,6 +6,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bustrap", "Bustrap\Bustrap.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wpf.Ui", "wpfui\src\Wpf.Ui\Wpf.Ui.csproj", "{1ADC87D1-8963-4100-845A-18477824718E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bustrap.Tests", "Bustrap.Tests\Bustrap.Tests.csproj", "{A89447FB-8777-4E41-BED4-A96087D705F3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{1ADC87D1-8963-4100-845A-18477824718E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1ADC87D1-8963-4100-845A-18477824718E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1ADC87D1-8963-4100-845A-18477824718E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A89447FB-8777-4E41-BED4-A96087D705F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A89447FB-8777-4E41-BED4-A96087D705F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A89447FB-8777-4E41-BED4-A96087D705F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A89447FB-8777-4E41-BED4-A96087D705F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

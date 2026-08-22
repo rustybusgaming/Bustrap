@@ -152,15 +152,6 @@
                     </StackPanel>
                 </ui:CardAction>
 
-                <controls:OptionControl 
-    Header="View Music Player"
-    Description="View and listen to your music, or manage from the tray menu.">
-                    <Button Content="View" 
-            Command="{Binding MusicWindowCommand}"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Top"/>
-                </controls:OptionControl>
-
             </StackPanel>
         </Expander>
 

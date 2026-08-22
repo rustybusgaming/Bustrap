@@ -42,7 +42,6 @@ namespace Bustrap.UI.Elements.Settings
         private DispatcherTimer _backgroundUpdateTimer = null!;
         private string? _currentBackgroundPath;
         private FileSystemWatcher? _appearanceViewModelWatcher;
-        private bool _spotifyInitialized = false;
         private DispatcherTimer? _searchDebounceTimer;
         private List<TextBlock> _allTextBlocksCache = new List<TextBlock>();
         private Page? _lastPage = null;
@@ -700,7 +699,7 @@ namespace Bustrap.UI.Elements.Settings
                 case "Disable Background Window": App.Settings.Prop.BackgroundWindow = isOn; break;
                 case "Disable RobloxCrashHandler": App.Settings.Prop.DisableCrash = isOn; break;
                 case "Exclusive Fullscreen": App.Settings.Prop.ExclusiveFullscreen = isOn; break;
-                case "Smooth ScrollBar": App.Settings.Prop.SmooothBARRyesirikikthxlucipook = isOn; break;
+                case "Smooth ScrollBar": App.Settings.Prop.SmoothScrollBar = isOn; break;
             }
         }
 
@@ -726,7 +725,7 @@ namespace Bustrap.UI.Elements.Settings
                     "Disable Background Window" => App.Settings.Prop.BackgroundWindow,
                     "Disable RobloxCrashHandler" => App.Settings.Prop.DisableCrash,
                     "Exclusive Fullscreen" => App.Settings.Prop.ExclusiveFullscreen,
-                    "Smooth ScrollBar" => App.Settings.Prop.SmooothBARRyesirikikthxlucipook,
+                    "Smooth ScrollBar" => App.Settings.Prop.SmoothScrollBar,
                     _ => false
                 };
             }
@@ -751,8 +750,8 @@ namespace Bustrap.UI.Elements.Settings
                     case "Disable Background Window": App.Settings.Prop.BackgroundWindow = value; break;
                     case "Disable RobloxCrashHandler": App.Settings.Prop.DisableCrash = value; break;
                     case "Exclusive Fullscreen": App.Settings.Prop.ExclusiveFullscreen = value; break;
-                    case "Gradient Movement": App.Settings.Prop.GRADmentFR = value; break;
-                    case "Smooth ScrollBar": App.Settings.Prop.SmooothBARRyesirikikthxlucipook = value; break;
+                    case "Gradient Movement": App.Settings.Prop.GradientMovement = value; break;
+                    case "Smooth ScrollBar": App.Settings.Prop.SmoothScrollBar = value; break;
                 }
 
                 RefreshAllSwitches(key, value);
@@ -1044,7 +1043,10 @@ namespace Bustrap.UI.Elements.Settings
                         _appearanceViewModel.BackgroundFilePath = newSettings.BackgroundFilePath;
                         _appearanceViewModel.GradientOpacity = newSettings.GradientOpacity;
                     }
-                    catch {}
+                    catch (Exception ex)
+                    {
+                        App.Logger.WriteException("MainWindow::InitializeBackgroundSettingsWatcher", ex);
+                    }
                 });
             };
 
@@ -1225,7 +1227,7 @@ namespace Bustrap.UI.Elements.Settings
 
         private void RootGrid_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!App.Settings.Prop.GRADmentFR)
+            if (!App.Settings.Prop.GradientMovement)
             {
                 // The toggle can be switched off while the pointer is still in
                 // the window - without this the gradient stays stuck at

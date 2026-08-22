@@ -72,7 +72,7 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Image Grid.Column="0" Width="72" Height="72" Source="pack://application:,,,/Bustrap.ico" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <Image Grid.Column="0" Width="72" Height="72" Source="pack://application:,,,/Bustrap.png" RenderOptions.BitmapScalingMode="HighQuality" />
                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
                         <TextBlock x:Name="LaunchTitle" Text="Bustrap" FontSize="24" />
                         <TextBlock Text="{Binding Version, Mode=OneTime}" VerticalAlignment="Bottom" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />

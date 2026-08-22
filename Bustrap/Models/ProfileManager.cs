@@ -224,7 +224,10 @@ namespace Bustrap.Integrations
                 if (File.Exists(path))
                     File.Delete(path);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException("NvidiaProfileManager::SafeDelete", ex);
+            }
         }
 
         private static async Task<bool> EnsureInspectorDownloaded()
@@ -320,7 +323,10 @@ namespace Bustrap.Integrations
                         return true;
                 }
             }
-            catch { }
+            catch (Exception error)
+            {
+                App.Logger.WriteException("NvidiaProfileManager::DragDropImport", error);
+            }
 
             return false;
         }

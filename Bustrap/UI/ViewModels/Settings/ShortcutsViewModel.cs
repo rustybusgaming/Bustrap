@@ -179,7 +179,10 @@ namespace Bustrap.UI.ViewModels.Settings
                     return true;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException("ShortcutsViewModel::TryParseShareLink", ex);
+            }
 
             return false;
         }
@@ -197,7 +200,10 @@ namespace Bustrap.UI.ViewModels.Settings
                     PrivateServerCode = File.ReadAllText(privateCodePath).Trim();
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException("ShortcutsViewModel::LoadPrivateServerCode", ex);
+            }
         }
 
         private async Task LoadGameIconAsync(string gameId)

@@ -43,8 +43,6 @@ namespace Bustrap.UI.Elements.ContextMenu
 
         private ServerHistory? _gameHistoryWindow;
 
-        private MusicPlayer? _musicplayerWindow;
-
         private GamePassConsole? _GamepassWindow;
 
         private BetterBloxDataCenterConsole? _betterbloxWindow;
@@ -130,7 +128,6 @@ namespace Bustrap.UI.Elements.ContextMenu
 
                 if (!App.Settings.Prop.UseDisableAppPatch) // why the fuck was there 2 of them my bitch ass
                     GameHistoryMenuItem.Visibility = Visibility.Visible;
-                MusicMenuItem.Visibility = Visibility.Visible;
             }
 
             if (_watcher.RichPresence is not null)
@@ -196,7 +193,10 @@ namespace Bustrap.UI.Elements.ContextMenu
                     iconUrl = data.UniverseDetails?.Thumbnail.ImageUrl;
                     universeName = data.UniverseDetails?.Data.Name ?? universeName;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    App.Logger.WriteException("MenuContainer::UpdateCurrentGameIconAsync", ex);
+                }
             }
             Dispatcher.Invoke(() => UpdateCurrentGameInfo(universeName, iconUrl));
         }
@@ -437,7 +437,10 @@ namespace Bustrap.UI.Elements.ContextMenu
                     iconUrl = data.UniverseDetails?.Thumbnail.ImageUrl;
                     universeName = data.UniverseDetails?.Data.Name ?? universeName;
                 }
-                catch { }
+                catch (Exception error)
+                {
+                    App.Logger.WriteException("MenuContainer::ShowJoinNotification", error);
+                }
             }
 
             int players = await _activityWatcher.GetPlayerCount();
@@ -452,7 +455,10 @@ namespace Bustrap.UI.Elements.ContextMenu
                         serverLocation = location;
                 }
             }
-            catch { }
+            catch (Exception error)
+            {
+                App.Logger.WriteException("MenuContainer::ShowJoinNotification", error);
+            }
             string playerText = players > 1 ? $" • {players} Players" : string.Empty;
             string text = $"{universeName}\n{serverLocation}{playerText}";
 
@@ -472,7 +478,10 @@ namespace Bustrap.UI.Elements.ContextMenu
                     notificationWindow.Activate();
                     notificationWindow.ShowNotification(text, iconUrl, 6);
                 }
-                catch { }
+                catch (Exception error)
+                {
+                    App.Logger.WriteException("MenuContainer::ShowJoinNotification", error);
+                }
             });
         }
 
@@ -749,23 +758,6 @@ namespace Bustrap.UI.Elements.ContextMenu
                 _betterbloxWindow.ShowDialog();
             else
                 _betterbloxWindow.Activate();
-        }
-
-        private void MusicPlayerMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (_activityWatcher is null)
-                throw new ArgumentNullException(nameof(_activityWatcher));
-
-            if (_musicplayerWindow is null)
-            {
-                _musicplayerWindow = new MusicPlayer();
-                _musicplayerWindow.Closed += (_, _) => _musicplayerWindow = null;
-            }
-
-            if (!_musicplayerWindow.IsVisible)
-                _musicplayerWindow.ShowDialog();
-            else
-                _musicplayerWindow.Activate();
         }
 
         private void OutputConsoleMenuItem_Click(object sender, RoutedEventArgs e)

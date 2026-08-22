@@ -459,7 +459,10 @@ namespace Bustrap.Integrations
                     if (!proc.HasExited)
                         EmptyWorkingSet(proc.Handle);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    App.Logger.WriteException("RobloxMemoryCleaner::CleanRobloxMemory", ex);
+                }
             }
         }
 

@@ -131,7 +131,10 @@ namespace Bustrap.UI.Elements.Settings.Pages
                 Directory.CreateDirectory(fleasionDir);
                 foreach (Process proc in Process.GetProcessesByName("Fleasion"))
                 {
-                    try { proc.Kill(); proc.WaitForExit(5000); } catch { }
+                    try { proc.Kill(); proc.WaitForExit(5000); } catch (Exception ex)
+                    {
+                        App.Logger.WriteException("ExtensionViewModel::DownloadFleasion", ex);
+                    }
                 }
 
                 int waitRetries = 10;
@@ -208,7 +211,10 @@ namespace Bustrap.UI.Elements.Settings.Pages
 
                 foreach (Process proc in Process.GetProcessesByName("Fleasion"))
                 {
-                    try { proc.Kill(); proc.WaitForExit(5000); } catch { }
+                    try { proc.Kill(); proc.WaitForExit(5000); } catch (Exception error)
+                    {
+                        App.Logger.WriteException("ExtensionViewModel::UninstallFleasion", error);
+                    }
                 }
 
                 bool deleted = false;

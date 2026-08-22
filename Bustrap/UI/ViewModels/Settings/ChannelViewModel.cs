@@ -385,10 +385,10 @@ namespace Bustrap.UI.ViewModels.Settings
             set => App.Settings.Prop.BufferSizeKbte = value;
         }
 
-        public string BufferSizeKbtes
+        public string BufferSizeKilobytes
         {
-            get => App.Settings.Prop.BufferSizeKbtes;
-            set => App.Settings.Prop.BufferSizeKbtes = value;
+            get => App.Settings.Prop.BufferSizeKilobytes;
+            set => App.Settings.Prop.BufferSizeKilobytes = value;
         }
 
         private string _viewChannel;
@@ -587,17 +587,6 @@ namespace Bustrap.UI.ViewModels.Settings
             }
         }
 
-
-        public string ChannelHash
-        {
-            get => App.Settings.Prop.ChannelHash;
-            set
-            {
-                const string VersionHashPattern = @"version-(.*)";
-                if (string.IsNullOrEmpty(value) || Regex.IsMatch(value, VersionHashPattern))
-                    App.Settings.Prop.ChannelHash = value;
-            }
-        }
 
         public bool UpdateRoblox
         {

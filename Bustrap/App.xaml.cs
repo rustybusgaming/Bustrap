@@ -342,7 +342,7 @@ namespace Bustrap
                 // or runtime rendering choices.
                 _ = Task.Run(() => Dispatcher.Invoke(InitializePostLoadSettings));
 
-                if (App.Settings.Prop.SmooothBARRyesirikikthxlucipook)
+                if (App.Settings.Prop.SmoothScrollBar)
                 {
                     await Task.Delay(50);
                     System.Runtime.CompilerServices.RuntimeHelpers
@@ -474,10 +474,6 @@ namespace Bustrap
 
                 DiscordClient?.Dispose();
                 DiscordClient = null;
-                if (Current.MainWindow?.DataContext is MusicPlayerViewModel musicVm)
-                {
-                    musicVm.Dispose();
-                }
             }
             catch (Exception ex)
             {

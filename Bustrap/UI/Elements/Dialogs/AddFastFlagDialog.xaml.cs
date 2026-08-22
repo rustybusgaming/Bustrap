@@ -80,9 +80,10 @@ namespace Bustrap.UI.Elements.Dialogs
 
                 UpdateBase64Tab();
             }
-            catch
+            catch (Exception ex)
             {
                 // we CATCH nothin :3
+                App.Logger.WriteException("AddFastFlagDialog::ParseJsonToFlags", ex);
             }
         }
 

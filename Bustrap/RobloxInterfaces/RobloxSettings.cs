@@ -55,8 +55,9 @@ namespace Bustrap
 
                 doc.Save(SettingsPath);
             }
-            catch
+            catch (Exception ex)
             {
+                App.Logger.WriteException("RobloxSettings::SetUncapped", ex);
             }
         }
 
@@ -116,8 +117,9 @@ namespace Bustrap
 
                 doc.Save(SettingsPath);
             }
-            catch
+            catch (Exception ex)
             {
+                App.Logger.WriteException("RobloxSettings::SetChatVisible", ex);
             }
         }
 

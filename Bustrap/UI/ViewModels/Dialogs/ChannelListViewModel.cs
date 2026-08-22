@@ -131,7 +131,10 @@ namespace Bustrap.UI.ViewModels.Dialogs
                                 tempCache[channel] = info;
                         }
                         catch (InvalidChannelException) { }
-                        catch { }
+                        catch (Exception exception)
+                        {
+                            App.Logger.WriteException("ChannelListsViewModel::RefreshAsync", exception);
+                        }
                         finally
                         {
                             semaphore.Release();
