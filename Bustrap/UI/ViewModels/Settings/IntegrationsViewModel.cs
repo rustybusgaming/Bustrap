@@ -353,7 +353,7 @@ namespace Bustrap.UI.ViewModels.Settings
         public CustomIntegration? SelectedCustomIntegration { get; set; }
         public int SelectedCustomIntegrationIndex { get; set; }
         public bool IsCustomIntegrationSelected => SelectedCustomIntegration is not null;
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string name)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
