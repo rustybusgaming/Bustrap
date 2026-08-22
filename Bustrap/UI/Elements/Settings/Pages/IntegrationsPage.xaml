@@ -69,7 +69,7 @@
         </controls:OptionControl>
 
         <controls:OptionControl
-    Description="Shows the track name in the top-right corner whenever Spotify, TIDAL, Apple Music or any other player starts a new song."
+    Description="Shows the track name in the top-right corner when Spotify, TIDAL or Apple Music starts a new song. Other players, including browsers, are ignored."
     Header="Song-Change Notification">
             <ui:ToggleSwitch Background="{DynamicResource SystemAccentBrush}" IsChecked="{Binding SongChangeNotification, Mode=TwoWay}" />
         </controls:OptionControl>

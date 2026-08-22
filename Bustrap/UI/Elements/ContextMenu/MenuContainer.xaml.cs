@@ -699,6 +699,11 @@ namespace Bustrap.UI.Elements.ContextMenu
             if (!App.Settings.Prop.SongChangeNotification)
                 return;
 
+            // browsers, games and Discord calls all register media sessions too;
+            // the toast is only for the three music services
+            if (!track.IsMusicService)
+                return;
+
             string subtitle = string.IsNullOrWhiteSpace(track.Artist)
                 ? track.Source
                 : $"{track.Artist} \u2022 {track.Source}";

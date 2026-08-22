@@ -28,6 +28,13 @@ namespace Bustrap.Integrations
             public string Artist { get; init; } = "";
             public string Album { get; init; } = "";
             public bool IsPlaying { get; init; }
+
+            /// <summary>
+            /// True only for Spotify, TIDAL and Apple Music. Everything else
+            /// that registers a session - browsers, games, Discord calls - is
+            /// still reported, but callers can use this to ignore it.
+            /// </summary>
+            public bool IsMusicService { get; init; }
         }
 
         /// <summary>Raised on a background thread - marshal before touching UI.</summary>
@@ -141,9 +148,12 @@ namespace Bustrap.Integrations
                 var properties = await session.TryGetMediaPropertiesAsync();
                 var playback = session.GetPlaybackInfo();
 
+                var (sourceName, isMusicService) = DescribeSource(session.SourceAppUserModelId);
+
                 Publish(new NowPlaying
                 {
-                    Source = FriendlySourceName(session.SourceAppUserModelId),
+                    Source = sourceName,
+                    IsMusicService = isMusicService,
                     Title = properties?.Title ?? "",
                     Artist = properties?.Artist ?? "",
                     Album = properties?.AlbumTitle ?? "",
@@ -180,32 +190,49 @@ namespace Bustrap.Integrations
         }
 
         /// <summary>
-        /// Turns an app user model id into something worth showing. Spotify and
-        /// TIDAL report an executable name; Apple Music is a packaged app, so it
-        /// reports a package family name instead.
+        /// The three services the song-change toast is limited to. Matched on
+        /// the app user model id, which is an executable name for Spotify and
+        /// TIDAL and a package family name for Apple Music.
         /// </summary>
-        private static string FriendlySourceName(string? appId)
+        private static readonly (string Match, string Name)[] MusicServices =
+        {
+            ("spotify", "Spotify"),
+            ("tidal", "TIDAL"),
+            ("applemusic", "Apple Music"),
+        };
+
+        /// <summary>
+        /// Turns an app user model id into a display name, and says whether it
+        /// is one of the music services rather than a browser or a game.
+        /// </summary>
+        private static (string Name, bool IsMusicService) DescribeSource(string? appId)
         {
             if (string.IsNullOrWhiteSpace(appId))
-                return "Unknown";
+                return ("Unknown", false);
 
             string id = appId.ToLowerInvariant();
 
-            if (id.Contains("spotify")) return "Spotify";
-            if (id.Contains("tidal")) return "TIDAL";
-            if (id.Contains("applemusic")) return "Apple Music";
-            if (id.Contains("itunes")) return "iTunes";
-            if (id.Contains("msedge")) return "Microsoft Edge";
-            if (id.Contains("chrome")) return "Chrome";
-            if (id.Contains("firefox")) return "Firefox";
+            foreach (var (match, name) in MusicServices)
+            {
+                if (id.Contains(match))
+                    return (name, true);
+            }
+
+            // recognised, but not one of the three - named for the Streaming
+            // tab, and deliberately not flagged as a music service
+            if (id.Contains("itunes")) return ("iTunes", false);
+            if (id.Contains("msedge")) return ("Microsoft Edge", false);
+            if (id.Contains("chrome")) return ("Chrome", false);
+            if (id.Contains("firefox")) return ("Firefox", false);
 
             // strip the executable suffix, and the "!App" tail packaged apps carry
             int bang = appId.IndexOf('!');
-            string name = bang > 0 ? appId[..bang] : appId;
+            string trimmed = bang > 0 ? appId[..bang] : appId;
 
-            return name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
-                ? name[..^4]
-                : name;
+            if (trimmed.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                trimmed = trimmed[..^4];
+
+            return (trimmed, false);
         }
 
         public Task<bool> TogglePlayPauseAsync() => TryControlAsync(s => s.TryTogglePlayPauseAsync());
