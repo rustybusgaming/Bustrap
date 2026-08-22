@@ -195,7 +195,6 @@
         <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
 
         <PackageReference Include="SharpZipLib" Version="1.4.2" />
-        <PackageReference Include="SpotifyAPI.Web" Version="7.4.2" />
         <PackageReference Include="System.Management" Version="10.0.3" />
         <PackageReference Include="WpfAnimatedGif" Version="2.0.2" />
         <PackageReference Include="XamlAnimatedGif" Version="2.3.1" />

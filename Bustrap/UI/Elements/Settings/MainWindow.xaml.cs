@@ -42,7 +42,6 @@ namespace Bustrap.UI.Elements.Settings
         private DispatcherTimer _backgroundUpdateTimer = null!;
         private string? _currentBackgroundPath;
         private FileSystemWatcher? _appearanceViewModelWatcher;
-        private bool _spotifyInitialized = false;
         private DispatcherTimer? _searchDebounceTimer;
         private List<TextBlock> _allTextBlocksCache = new List<TextBlock>();
         private Page? _lastPage = null;

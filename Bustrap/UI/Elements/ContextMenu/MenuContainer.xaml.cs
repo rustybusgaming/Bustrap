@@ -43,8 +43,6 @@ namespace Bustrap.UI.Elements.ContextMenu
 
         private ServerHistory? _gameHistoryWindow;
 
-        private MusicPlayer? _musicplayerWindow;
-
         private GamePassConsole? _GamepassWindow;
 
         private BetterBloxDataCenterConsole? _betterbloxWindow;
@@ -130,7 +128,6 @@ namespace Bustrap.UI.Elements.ContextMenu
 
                 if (!App.Settings.Prop.UseDisableAppPatch) // why the fuck was there 2 of them my bitch ass
                     GameHistoryMenuItem.Visibility = Visibility.Visible;
-                MusicMenuItem.Visibility = Visibility.Visible;
             }
 
             if (_watcher.RichPresence is not null)
@@ -749,23 +746,6 @@ namespace Bustrap.UI.Elements.ContextMenu
                 _betterbloxWindow.ShowDialog();
             else
                 _betterbloxWindow.Activate();
-        }
-
-        private void MusicPlayerMenuItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (_activityWatcher is null)
-                throw new ArgumentNullException(nameof(_activityWatcher));
-
-            if (_musicplayerWindow is null)
-            {
-                _musicplayerWindow = new MusicPlayer();
-                _musicplayerWindow.Closed += (_, _) => _musicplayerWindow = null;
-            }
-
-            if (!_musicplayerWindow.IsVisible)
-                _musicplayerWindow.ShowDialog();
-            else
-                _musicplayerWindow.Activate();
         }
 
         private void OutputConsoleMenuItem_Click(object sender, RoutedEventArgs e)

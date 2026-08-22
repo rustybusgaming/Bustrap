@@ -474,10 +474,6 @@ namespace Bustrap
 
                 DiscordClient?.Dispose();
                 DiscordClient = null;
-                if (Current.MainWindow?.DataContext is MusicPlayerViewModel musicVm)
-                {
-                    musicVm.Dispose();
-                }
             }
             catch (Exception ex)
             {

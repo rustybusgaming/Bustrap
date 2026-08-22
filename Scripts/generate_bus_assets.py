@@ -1,290 +1,233 @@
-"""Generate 🚌 bus emoji + cool teal/black Bus theme icon assets for Bustrap.
+"""Generate the Bustrap app icon: a bus driving through a tilted square frame.
 
-Pillow's emoji support is unreliable on Windows, so the bus is drawn as
-vector shapes (rounded body, windows, wheels). This guarantees a recognizable
-yellow school bus on every machine.
+The art is drawn as vector shapes at 4x and downsampled, so it stays crisp at
+every size instead of being one bitmap scaled around. Sizes at or below 32px
+get a deliberately simplified variant - the full drawing turns to mush once a
+window is less than two pixels wide.
 
-Outputs to C:/Users/Te Aroha/Bustrap/Images/:
-  - Bustrap.png           512x512 main app icon (rounded teal square + bus)
-  - Bustrap.ico           multi-size ICO (16,32,48,64,128,256) for ApplicationIcon
-  - BustrapTheme.png      1024x576 theme preview banner (teal/black gradient + bus)
+Run from anywhere:  python Scripts/generate_bus_assets.py
+
+Writes, relative to the repository root:
+  Bustrap/Bustrap.png    512x512 icon used by the WPF UI
+  Bustrap/Bustrap.ico    multi-size ICO used for the executable and windows
+  Images/Bustrap.png     copy for the README and website
+  Images/Bustrap.ico     copy
 """
-import math
+from __future__ import annotations
+
 import os
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
-OUT_DIR = r"C:\Users\Te Aroha\Bustrap\Images"
-os.makedirs(OUT_DIR, exist_ok=True)
+SS = 4                                  # supersampling factor
+S = 1024                                # master size in logical units
+ANGLE = -15                             # frame tilt
 
-# Cool teal + black palette
-TEAL_BRIGHT = (38, 220, 199)    # #26DCC7
-TEAL_DEEP   = (8, 92, 110)      # #085C6E
-TEAL_GLOW   = (90, 245, 220)    # #5AF5DC
-BLACK       = (8, 12, 18)       # #080C12
-BLACK_SOFT  = (18, 26, 34)      # #121A22
-GRID_LINE   = (34, 220, 195, 60)
+TILE_TOP = (18, 58, 68)
+TILE_BOT = (7, 24, 30)
+TILE_EDGE = (94, 232, 214)
+FRAME = (238, 251, 249)
+FRAME_SHADE = (176, 214, 210)
+BUS_BODY = (255, 196, 26)
+BUS_SHADE = (233, 160, 12)
+BUS_LINE = (26, 43, 51)
+GLASS = (183, 231, 245)
+WHEEL = (30, 34, 40)
+HUB = (206, 214, 222)
+LAMP = (255, 244, 205)
 
-# School bus yellow
-BUS_BODY     = (255, 196, 32)
-BUS_BODY_DK  = (214, 156, 12)
-BUS_OUTLINE  = (28, 24, 16)
-BUS_WINDOW   = (165, 220, 235)
-WHEEL_TIRE   = (24, 24, 28)
-WHEEL_HUB    = (170, 178, 190)
-LAMP         = (255, 230, 130)
-
-
-# --- Helpers -----------------------------------------------------------------
-
-def find_font(*candidates: str):
-    for c in candidates:
-        if c and os.path.exists(c):
-            return c
-    return None
+ICO_SIZES = (16, 20, 24, 32, 40, 48, 64, 96, 128, 256)
+SIMPLIFY_AT = 32                        # this size and below use the bold cut
 
 
-def rounded_mask(size: int, radius_ratio: float = 0.22) -> Image.Image:
-    m = Image.new("L", (size, size), 0)
-    d = ImageDraw.Draw(m)
-    d.rounded_rectangle((0, 0, size - 1, size - 1), radius=int(size * radius_ratio), fill=255)
-    return m
+def px(v: float) -> int:
+    return int(round(v * SS))
 
 
-def radial_glow(size: int) -> Image.Image:
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    cx, cy = size / 2, size * 0.45
-    max_r = size * 0.75
-    for y in range(size):
-        for x in range(size):
-            dx, dy = x - cx, y - cy
-            d = math.hypot(dx, dy)
-            t = max(0.0, 1 - d / max_r)
-            t = t ** 1.8
-            r = int(BLACK[0] * (1 - t) + TEAL_DEEP[0] * t)
-            g = int(BLACK[1] * (1 - t) + TEAL_DEEP[1] * t)
-            b = int(BLACK[2] * (1 - t) + TEAL_DEEP[2] * t)
-            img.putpixel((x, y), (r, g, b, 255))
-    return img
+def _layer() -> Image.Image:
+    return Image.new("RGBA", (S * SS, S * SS), (0, 0, 0, 0))
 
 
-def draw_grid_layer(size: int, spacing: int = 32) -> Image.Image:
-    layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+def _vertical_gradient(top, bottom) -> Image.Image:
+    strip = Image.new("RGB", (1, S * SS))
+    for y in range(S * SS):
+        t = y / (S * SS - 1)
+        strip.putpixel((0, y), tuple(
+            round(a + (b - a) * t) for a, b in zip(top, bottom)))
+    return strip.resize((S * SS, S * SS)).convert("RGBA")
+
+
+def tile(simple: bool) -> Image.Image:
+    """Dark rounded app tile with a thin mint edge."""
+    mask = Image.new("L", (S * SS, S * SS), 0)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        [0, 0, S * SS - 1, S * SS - 1], radius=px(0.223 * S), fill=255)
+
+    layer = _layer()
+    layer.paste(_vertical_gradient(TILE_TOP, TILE_BOT), (0, 0), mask)
+
+    # at icon sizes the edge is a fraction of a pixel and only muddies the
+    # silhouette, so it is dropped from the simplified cut
+    if simple:
+        return layer
+
+    edge = _layer()
+    ImageDraw.Draw(edge).rounded_rectangle(
+        [px(6), px(6), px(S - 6) - 1, px(S - 6) - 1],
+        radius=px(0.21 * S), outline=TILE_EDGE + (170,), width=px(7))
+    return Image.alpha_composite(layer, edge)
+
+
+def frame(simple: bool):
+    """Tilted rounded square with a square hole.
+
+    Returns the whole frame, the near bar on its own, and the far side. The
+    near bar gets drawn back over the bus so the nose comes out in front of
+    the frame while the tail passes behind it.
+    """
+    outer = (0.64 if simple else 0.60) * S
+    hole = (0.58 if simple else 0.60) * outer
+
+    layer = _layer()
     d = ImageDraw.Draw(layer)
-    for i in range(0, size + spacing, spacing):
-        d.line([(i, 0), (i - size, size)], fill=GRID_LINE, width=1)
-        d.line([(i, 0), (i + size, size)], fill=GRID_LINE, width=1)
-    return layer.filter(ImageFilter.GaussianBlur(0.6))
+
+    x0 = (S - outer) / 2
+    d.rounded_rectangle([px(x0), px(x0), px(x0 + outer), px(x0 + outer)],
+                        radius=px(0.22 * outer), fill=(255, 255, 255, 255))
+
+    if not simple:
+        layer = Image.composite(_vertical_gradient(FRAME, FRAME_SHADE),
+                                layer, layer.getchannel("A"))
+        d = ImageDraw.Draw(layer)
+    else:
+        layer = Image.composite(Image.new("RGBA", layer.size, FRAME + (255,)),
+                                layer, layer.getchannel("A"))
+        d = ImageDraw.Draw(layer)
+
+    h0, h1 = (S - hole) / 2, (S + hole) / 2
+    d.rounded_rectangle([px(h0), px(h0), px(h1), px(h1)],
+                        radius=px(0.24 * hole), fill=(0, 0, 0, 0))
+
+    # cut in the frame's own frame of reference, so the seam follows the tilt
+    # instead of slicing straight down the screen
+    band = Image.new("L", layer.size, 0)
+    ImageDraw.Draw(band).rectangle([0, 0, px(h0), layer.size[1]], fill=255)
+
+    full = layer.rotate(ANGLE, resample=Image.BICUBIC)
+    # hard edge: a feathered cut lets the drop shadow bleed through the seam
+    band = band.rotate(ANGLE, resample=Image.BICUBIC).point(
+        lambda v: 255 if v >= 128 else 0)
+
+    near = full.copy()
+    near.putalpha(Image.composite(full.getchannel("A"),
+                                  Image.new("L", full.size, 0), band))
+    far = ImageChops.subtract(full.getchannel("A"), band)
+    return full, near, far
 
 
-def draw_bus(canvas: Image.Image, cx: int, cy: int, scale: float) -> None:
-    """Draw a vector school bus centered at (cx, cy). scale=1.0 ~= 256px wide."""
-    s = scale
-    body_w = int(260 * s)
-    body_h = int(150 * s)
-    body_left = cx - body_w // 2
-    body_top  = cy - body_h // 2
+def bus(simple: bool) -> Image.Image:
+    """Side profile facing right."""
+    layer = _layer()
+    d = ImageDraw.Draw(layer)
 
-    # Soft teal glow under the bus
-    glow = Image.new("RGBA", (body_w + int(80 * s), body_h + int(80 * s)), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    gd.ellipse((0, 0, glow.width - 1, glow.height - 1), fill=(*TEAL_GLOW, 90))
-    glow = glow.filter(ImageFilter.GaussianBlur(int(20 * s)))
-    canvas.alpha_composite(glow, (body_left - int(40 * s), body_top - int(40 * s)))
+    if simple:
+        bw, bh, bx, by = 0.88 * S, 0.28 * S, 0.06 * S, 0.36 * S
+        line = px(0.030 * S)
+        windows, ww, gap, lead = 2, 0.150 * S, 0.045 * S, 0.075 * S
+    else:
+        bw, bh, bx, by = 0.82 * S, 0.24 * S, 0.09 * S, 0.38 * S
+        line = px(0.020 * S)
+        windows, ww, gap, lead = 4, 0.115 * S, 0.028 * S, 0.085 * S
 
-    # Drop shadow under the chassis
-    shadow = Image.new("RGBA", (body_w + int(20 * s), int(40 * s)), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(shadow)
-    sd.ellipse((0, 0, shadow.width - 1, shadow.height - 1), fill=(0, 0, 0, 130))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(int(8 * s)))
-    canvas.alpha_composite(shadow, (body_left - int(10 * s), body_top + body_h - int(10 * s)))
+    body = [px(bx), px(by), px(bx + bw), px(by + bh)]
+    radius = px(0.30 * bh)
 
-    # Bus body
-    body_layer = Image.new("RGBA", (body_w + int(40 * s), body_h + int(40 * s)), (0, 0, 0, 0))
-    bd = ImageDraw.Draw(body_layer)
-    bd.rounded_rectangle(
-        (0, 0, body_w, body_h),
-        radius=int(28 * s),
-        fill=BUS_BODY,
-        outline=BUS_OUTLINE,
-        width=max(2, int(3 * s)),
-    )
+    d.rounded_rectangle(body, radius=radius, fill=BUS_BODY,
+                        outline=BUS_LINE, width=line)
+    d.rounded_rectangle([px(bx + 0.02 * S), px(by + bh * 0.70),
+                         px(bx + bw - 0.02 * S), px(by + bh)],
+                        radius=px(0.10 * bh), fill=BUS_SHADE)
+    d.rounded_rectangle(body, radius=radius, outline=BUS_LINE, width=line)
 
-    # Hood (front of the bus)
-    hood_w = int(70 * s)
-    hood_h = int(90 * s)
-    hood_top = body_h - hood_h
-    bd.rounded_rectangle(
-        (0, hood_top, hood_w, body_h),
-        radius=int(18 * s),
-        fill=BUS_BODY,
-        outline=BUS_OUTLINE,
-        width=max(2, int(3 * s)),
-    )
-    # Bottom chassis strip
-    bd.rectangle(
-        (0, body_h - int(14 * s), body_w, body_h),
-        fill=BUS_BODY_DK,
-    )
+    wy0, wy1 = by + 0.20 * bh, by + 0.58 * bh
+    wx = bx + lead
+    for _ in range(windows):
+        d.rounded_rectangle([px(wx), px(wy0), px(wx + ww), px(wy1)],
+                            radius=px(0.030 * S), fill=GLASS,
+                            outline=None if simple else BUS_LINE,
+                            width=px(0.010 * S))
+        wx += ww + gap
 
-    # Windows across the main body
-    win_y = int(20 * s)
-    win_h = int(55 * s)
-    win_count = 4
-    win_pad = int(10 * s)
-    win_area_left = hood_w + int(10 * s)
-    win_area_w = body_w - win_area_left - int(14 * s)
-    win_w = (win_area_w - win_pad * (win_count - 1)) // win_count
-    for i in range(win_count):
-        x0 = win_area_left + i * (win_w + win_pad)
-        bd.rounded_rectangle(
-            (x0, win_y, x0 + win_w, win_y + win_h),
-            radius=int(8 * s),
-            fill=BUS_WINDOW,
-            outline=BUS_OUTLINE,
-            width=max(1, int(2 * s)),
-        )
-        bd.rectangle(
-            (x0 + int(6 * s), win_y + int(6 * s), x0 + win_w - int(6 * s), win_y + int(14 * s)),
-            fill=(220, 240, 250, 180),
-        )
+    d.rounded_rectangle([px(wx + 0.010 * S), px(wy0),
+                         px(bx + bw - 0.045 * S), px(wy1 + 0.02 * S)],
+                        radius=px(0.032 * S), fill=GLASS,
+                        outline=None if simple else BUS_LINE,
+                        width=px(0.010 * S))
 
-    # Driver window
-    bd.rounded_rectangle(
-        (int(8 * s), hood_top + int(10 * s), hood_w - int(8 * s), hood_top + int(50 * s)),
-        radius=int(6 * s),
-        fill=BUS_WINDOW,
-        outline=BUS_OUTLINE,
-        width=max(1, int(2 * s)),
-    )
+    if not simple:
+        lr = 0.026 * S
+        lx, ly = bx + bw - 0.045 * S, by + bh * 0.76
+        d.ellipse([px(lx - lr), px(ly - lr), px(lx + lr), px(ly + lr)],
+                  fill=LAMP, outline=BUS_LINE, width=px(0.008 * S))
 
-    # Headlight
-    bd.ellipse(
-        (int(8 * s), body_h - int(38 * s), int(28 * s), body_h - int(18 * s)),
-        fill=LAMP, outline=BUS_OUTLINE, width=max(1, int(2 * s)),
-    )
+    r = (0.080 if simple else 0.070) * S
+    cy = by + bh + 0.010 * S
+    for cx in (bx + 0.18 * S, bx + bw - 0.22 * S):
+        d.ellipse([px(cx - r), px(cy - r), px(cx + r), px(cy + r)],
+                  fill=WHEEL, outline=BUS_LINE, width=line)
+        if not simple:
+            hr = r * 0.40
+            d.ellipse([px(cx - hr), px(cy - hr), px(cx + hr), px(cy + hr)],
+                      fill=HUB)
 
-    # Door
-    door_x0 = body_w - int(38 * s)
-    bd.rounded_rectangle(
-        (door_x0, int(60 * s), door_x0 + int(28 * s), body_h - int(2 * s)),
-        radius=int(6 * s),
-        fill=BUS_BODY_DK,
-        outline=BUS_OUTLINE,
-        width=max(1, int(2 * s)),
-    )
-    bd.line(
-        (door_x0 + int(14 * s), int(66 * s), door_x0 + int(14 * s), body_h - int(4 * s)),
-        fill=BUS_OUTLINE, width=max(1, int(2 * s)),
-    )
-
-    canvas.alpha_composite(body_layer, (body_left - int(20 * s), body_top - int(20 * s)))
-
-    # Wheels
-    wheel_r = int(26 * s)
-    wheel_y = body_top + body_h - int(2 * s)
-    for wx in (body_left + int(45 * s), body_left + body_w - int(55 * s)):
-        wd = ImageDraw.Draw(canvas)
-        wd.ellipse(
-            (wx - wheel_r, wheel_y - wheel_r, wx + wheel_r, wheel_y + wheel_r),
-            fill=WHEEL_TIRE, outline=BUS_OUTLINE, width=max(1, int(3 * s)),
-        )
-        hub_r = int(10 * s)
-        wd.ellipse(
-            (wx - hub_r, wheel_y - hub_r, wx + hub_r, wheel_y + hub_r),
-            fill=WHEEL_HUB, outline=BUS_OUTLINE, width=max(1, int(2 * s)),
-        )
+    return layer
 
 
-# --- Main app icon (square) --------------------------------------------------
+def compose(simple: bool = False) -> Image.Image:
+    full, near, far = frame(simple)
 
-def make_app_icon(size: int = 512) -> Image.Image:
-    canvas = radial_glow(size)
-    canvas.alpha_composite(draw_grid_layer(size, spacing=max(24, size // 16)))
-    draw_bus(canvas, size // 2, int(size * 0.5), size / 512 * 1.05)
+    art = Image.alpha_composite(tile(simple), full)
+    art = Image.alpha_composite(art, bus(simple))
 
-    mask = rounded_mask(size, radius_ratio=0.22)
-    canvas.putalpha(mask)
+    if not simple:
+        # soft shadow cast by the near bar onto the bus, masked off the far
+        # side of the frame where it would only show the cut as a smudge
+        drop = near.getchannel("A").filter(
+            ImageFilter.GaussianBlur(px(0.016 * S)))
+        drop = ImageChops.offset(drop, px(0.014 * S), px(0.014 * S))
+        drop = ImageChops.multiply(drop, ImageChops.invert(far))
+        drop = drop.point(lambda v: int(v * 0.45))
+        shadow = Image.new("RGBA", near.size, (0, 0, 0, 0))
+        shadow.paste((4, 12, 16, 255), (0, 0), drop)
+        art = Image.alpha_composite(art, shadow)
 
-    stroke = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(stroke)
-    sd.rounded_rectangle((0, 0, size - 1, size - 1),
-                         radius=int(size * 0.22),
-                         outline=(*TEAL_BRIGHT, 255), width=max(2, size // 128))
-    canvas.alpha_composite(stroke)
-    return canvas
-
-
-def make_ico(path: str, sizes=(16, 32, 48, 64, 128, 256)) -> None:
-    base = make_app_icon(512)
-    base.save(path, format="ICO", sizes=[(s, s) for s in sizes])
+    return Image.alpha_composite(art, near)
 
 
-# --- Theme preview banner ----------------------------------------------------
+def render(size: int) -> Image.Image:
+    return compose(simple=size <= SIMPLIFY_AT).resize((size, size), Image.LANCZOS)
 
-def make_theme_banner(width: int = 1024, height: int = 576) -> Image.Image:
-    img = Image.new("RGBA", (width, height), BLACK + (255,))
-    d = ImageDraw.Draw(img)
 
-    for y in range(height):
-        t = y / height
-        r = int(TEAL_DEEP[0] * (1 - t) + BLACK[0] * t)
-        g = int(TEAL_DEEP[1] * (1 - t) + BLACK[1] * t)
-        b = int(TEAL_DEEP[2] * (1 - t) + BLACK[2] * t)
-        d.line([(0, y), (width, y)], fill=(r, g, b, 255))
+def main() -> None:
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    gd.ellipse((0, 0, int(width * 0.55), height),
-               fill=(*TEAL_BRIGHT, 90))
-    glow = glow.filter(ImageFilter.GaussianBlur(60))
-    img.alpha_composite(glow)
+    detailed = compose(simple=False)
+    frames = [render(s) for s in ICO_SIZES]
 
-    grid = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    gd2 = ImageDraw.Draw(grid)
-    horizon = int(height * 0.6)
-    for i in range(-width, width * 2, 40):
-        gd2.line([(i, height), (width // 2 + (i - width // 2) // 4, horizon)],
-                 fill=(*TEAL_BRIGHT, 70), width=1)
-    for j in range(0, horizon + 1, 36):
-        gd2.line([(0, j), (width, j)], fill=(*TEAL_BRIGHT, 50), width=1)
-    grid = grid.filter(ImageFilter.GaussianBlur(0.4))
-    img.alpha_composite(grid)
+    for directory in ("Bustrap", "Images"):
+        out = os.path.join(root, directory)
+        os.makedirs(out, exist_ok=True)
 
-    draw_bus(img, int(width * 0.78), int(height * 0.5), height / 512 * 1.0)
-
-    wordmark_font_path = find_font(
-        r"C:\Windows\Fonts\segoeuib.ttf",
-        r"C:\Windows\Fonts\arialbd.ttf",
-        r"C:\Windows\Fonts\seguisb.ttf",
-    )
-    sub_font_path = find_font(
-        r"C:\Windows\Fonts\segoeui.ttf",
-        r"C:\Windows\Fonts\arial.ttf",
-    )
-    wordmark_font = (ImageFont.truetype(wordmark_font_path, int(height * 0.24))
-                     if wordmark_font_path else ImageFont.load_default())
-    sub_font = (ImageFont.truetype(sub_font_path, int(height * 0.07))
-                if sub_font_path else ImageFont.load_default())
-
-    d2 = ImageDraw.Draw(img)
-    d2.text((int(width * 0.06), int(height * 0.30)), "Bustrap",
-            font=wordmark_font, fill=(*TEAL_GLOW, 255))
-    d2.text((int(width * 0.06), int(height * 0.58)),
-            "cool teal + black theme",
-            font=sub_font, fill=(200, 240, 235, 230))
-    return img
+        detailed.resize((512, 512), Image.LANCZOS).save(
+            os.path.join(out, "Bustrap.png"))
+        # Pillow rebuilds every entry from the largest frame, which throws away
+        # the simplified small ones, so hand it the frames it should keep
+        frames[-1].save(os.path.join(out, "Bustrap.ico"),
+                        format="ICO",
+                        sizes=[(s, s) for s in ICO_SIZES],
+                        append_images=frames[:-1])
+        print("wrote", os.path.join(out, "Bustrap.png"),
+              "and", os.path.join(out, "Bustrap.ico"))
 
 
 if __name__ == "__main__":
-    app_png  = os.path.join(OUT_DIR, "Bustrap.png")
-    app_ico  = os.path.join(OUT_DIR, "Bustrap.ico")
-    theme_png = os.path.join(OUT_DIR, "BustrapTheme.png")
-
-    make_app_icon(512).save(app_png, format="PNG")
-    print("wrote", app_png)
-
-    make_ico(app_ico)
-    print("wrote", app_ico)
-
-    make_theme_banner(1024, 576).save(theme_png, format="PNG")
-    print("wrote", theme_png)
+    main()

@@ -49,7 +49,7 @@
                 Height="72"
                 VerticalAlignment="Center"
                 RenderOptions.BitmapScalingMode="HighQuality"
-                Source="pack://application:,,,/Bustrap.ico" />
+                Source="pack://application:,,,/Bustrap.png" />
             <Image
                 x:Name="Image2"
                 Grid.Column="0"

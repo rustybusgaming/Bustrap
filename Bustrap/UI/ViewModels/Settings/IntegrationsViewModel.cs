@@ -18,7 +18,6 @@ namespace Bustrap.UI.ViewModels.Settings
         public ICommand DeleteIntegrationCommand => new RelayCommand(DeleteIntegration);
         public ICommand BrowseIntegrationLocationCommand => new RelayCommand(BrowseIntegrationLocation);
         public ICommand OpenHistoryWindowCommand { get; }
-        public ICommand MusicWindowCommand { get; }
         public ICommand ChatModeWindowCommand { get; }
         public ICommand RPCWindowCommand { get; }
         public ICommand AccountWindowCommand { get; }
@@ -36,7 +35,6 @@ namespace Bustrap.UI.ViewModels.Settings
             LoadSettings();
 
             OpenHistoryWindowCommand = new RelayCommand(OpenHistoryWindow);
-            MusicWindowCommand = new RelayCommand(MusicPlayerWindow);
             ChatModeWindowCommand = new RelayCommand(ChatModeWindow);
             RPCWindowCommand = new RelayCommand(RPCUIWindow);
             AccountWindowCommand = new RelayCommand(AccountWindow);
@@ -130,12 +128,6 @@ namespace Bustrap.UI.ViewModels.Settings
         {
             var historyWindow = new DiscordChatWindow();
             historyWindow.Show();
-        }
-
-        private void MusicPlayerWindow()
-        {
-            var musicPlayerWindow = new MusicPlayer(_watcher);
-            musicPlayerWindow.Show();
         }
 
         private void RPCUIWindow()
