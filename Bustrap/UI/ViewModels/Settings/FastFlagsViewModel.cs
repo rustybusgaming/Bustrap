@@ -858,14 +858,14 @@ namespace Bustrap.UI.ViewModels.Settings
             get => DynamicResolutions.FirstOrDefault(x => x.Value == App.FastFlags.GetPreset("Rendering.Dynamic.Resolution")).Key;
             set
             {
-                if (value == DynamicResolution.Resolution2)
-                {
-                    App.FastFlags.SetPreset("Rendering.Dynamic.Resolution", null);
-                }
-                else
-                {
-                    App.FastFlags.SetPreset("Rendering.Dynamic.Resolution", DynamicResolutions[value]);
-                }
+                // Default maps to null, which removes the flag and hands the
+                // resolution back to Roblox
+                App.FastFlags.SetPreset("Rendering.Dynamic.Resolution", DynamicResolutions[value]);
+
+                // OnPropertyChanged, not PropertyChanged?.Invoke - this class
+                // shadows the base event with `new`, and WPF is bound to the
+                // base one, so invoking the shadowing event notifies nobody
+                OnPropertyChanged();
             }
         }
 
