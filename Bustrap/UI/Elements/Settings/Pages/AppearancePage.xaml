@@ -27,13 +27,13 @@
                 <controls:OptionControl
             Description="Adds a Gradient Movement with Cursor (Restart Required)"
             Header="Gradient Movement">
-                    <ui:ToggleSwitch Background="{DynamicResource SystemAccentBrush}" IsChecked="{Binding GRADmentFR, Mode=TwoWay}" />
+                    <ui:ToggleSwitch Background="{DynamicResource SystemAccentBrush}" IsChecked="{Binding GradientMovement, Mode=TwoWay}" />
                 </controls:OptionControl>
 
                 <controls:OptionControl
             Description="Adds a Smooth ScrollBar Movement (Restart Required)"
             Header="Smooth ScrollBar">
-                    <ui:ToggleSwitch Background="{DynamicResource SystemAccentBrush}" IsChecked="{Binding SmooothBARRyesirikikthxlucipook, Mode=TwoWay}" />
+                    <ui:ToggleSwitch Background="{DynamicResource SystemAccentBrush}" IsChecked="{Binding SmoothScrollBar, Mode=TwoWay}" />
                 </controls:OptionControl>
 
                 <controls:OptionControl

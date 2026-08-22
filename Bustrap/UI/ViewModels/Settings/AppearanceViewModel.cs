@@ -72,10 +72,10 @@ namespace Bustrap.UI.ViewModels.Settings
             PopulateCustomThemes();
         }
 
-        public bool GRADmentFR
+        public bool GradientMovement
         {
-            get => App.Settings.Prop.GRADmentFR;
-            set => App.Settings.Prop.GRADmentFR = value;
+            get => App.Settings.Prop.GradientMovement;
+            set => App.Settings.Prop.GradientMovement = value;
         }
 
         public bool ClearFont
@@ -84,10 +84,10 @@ namespace Bustrap.UI.ViewModels.Settings
             set => App.Settings.Prop.ClearFont = value;
         }
 
-        public bool SmooothBARRyesirikikthxlucipook
+        public bool SmoothScrollBar
         {
-            get => App.Settings.Prop.SmooothBARRyesirikikthxlucipook;
-            set => App.Settings.Prop.SmooothBARRyesirikikthxlucipook = value;
+            get => App.Settings.Prop.SmoothScrollBar;
+            set => App.Settings.Prop.SmoothScrollBar = value;
         }
 
         #region Properties

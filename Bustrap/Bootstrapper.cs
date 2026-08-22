@@ -313,12 +313,8 @@ namespace Bustrap
             if (!App.Settings.Prop.CheckForUpdates) return false;
 
             string local = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0";
-            remoteTag = remoteTag.TrimStart('v', 'V');
 
-            if (Version.TryParse(local, out var lv) && Version.TryParse(remoteTag, out var rv))
-                return rv > lv;
-
-            return string.Compare(remoteTag, local, StringComparison.OrdinalIgnoreCase) > 0;
+            return VersionComparer.IsNewer(remoteTag, local);
         }
 
         private static void RestartApplication()

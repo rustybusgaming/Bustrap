@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.Json.Nodes;
 using Bustrap.Enums;
 
 namespace Bustrap.Models.Persistable
@@ -7,7 +8,7 @@ namespace Bustrap.Models.Persistable
     /// <summary>
     /// Represents configuration settings for Bustrap.
     /// </summary>
-    public class AppSettings
+    public class AppSettings : IMigratableSettings
     {
         // General Configuration
         public BootstrapperStyle BootstrapperStyle { get; set; } = BootstrapperStyle.FluentAeroDialog;
@@ -39,7 +40,7 @@ namespace Bustrap.Models.Persistable
         public bool WPFSoftwareRender { get; set; } = false;
         public bool ConfirmLaunches { get; set; } = true;
 
-        public bool SmooothBARRyesirikikthxlucipook { get; set; } = false; // wanna keep this on false so people may not be annoyed by it being on
+        public bool SmoothScrollBar { get; set; } = false; // wanna keep this on false so people may not be annoyed by it being on
         public bool NotificationWindowShow { get; set; } = true;
         public bool BackgroundWindow { get; set; } = true;
         public bool UsePlaceId { get; set; } = false;
@@ -59,7 +60,7 @@ namespace Bustrap.Models.Persistable
 
         public string Locale { get; set; } = "nil";
         public string BufferSizeKbte { get; set; } = "1024";
-        public string BufferSizeKbtes { get; set; } = "2048";
+        public string BufferSizeKilobytes { get; set; } = "2048";
         public string SkyboxName { get; set; } = "Default";
         public string LastServerSave { get; set; } = "112757576021097";
         public bool SkyBoxDataSending { get; set; } = false;
@@ -79,7 +80,7 @@ namespace Bustrap.Models.Persistable
 
         // Analytics & Tracking
         public bool EnableActivityTracking { get; set; } = true;
-        public bool ServerUptimeBetterBLOXcuzitsbetterXD { get; set; } = true;
+        public bool ShowServerUptime { get; set; } = true;
 
         public string DownloadingStringFormat { get; set; } = Strings.Bootstrapper_Status_Downloading + " {0} - {1}MB / {2}MB";
 
@@ -124,11 +125,57 @@ namespace Bustrap.Models.Persistable
         public bool MatchUniverseId { get; set; } = true;
         public long? TargetUniverseId { get; set; }
         public bool IsBetterServersEnabled { get; set; } = false;
-        public bool GRADmentFR { get; set; } = false;
+        public bool GradientMovement { get; set; } = false;
         public bool VoidRPC { get; set; } = true;
 
 
         public ResolutionSetting? InGameResolution { get; set; }
+
+        /// <summary>
+        /// Values written by builds that used the old property names. Without
+        /// this a rename silently resets the setting for everyone who upgrades.
+        /// </summary>
+        public bool Migrate(JsonObject raw)
+        {
+            bool changed = false;
+
+            changed |= CarryOver<bool>(raw, "SmooothBARRyesirikikthxlucipook",
+                nameof(SmoothScrollBar), value => SmoothScrollBar = value);
+
+            changed |= CarryOver<string>(raw, "BufferSizeKbtes",
+                nameof(BufferSizeKilobytes), value => BufferSizeKilobytes = value);
+
+            changed |= CarryOver<bool>(raw, "ServerUptimeBetterBLOXcuzitsbetterXD",
+                nameof(ShowServerUptime), value => ShowServerUptime = value);
+
+            changed |= CarryOver<bool>(raw, "GRADmentFR",
+                nameof(GradientMovement), value => GradientMovement = value);
+
+            return changed;
+        }
+
+        private static bool CarryOver<TValue>(JsonObject raw, string legacyName, string currentName, Action<TValue> apply)
+        {
+            // a file already written by a current build wins - the legacy key
+            // may still be sitting there from a config that was hand-edited
+            if (raw.ContainsKey(currentName))
+                return false;
+
+            if (!raw.TryGetPropertyValue(legacyName, out JsonNode? node) || node is null)
+                return false;
+
+            try
+            {
+                // throws if the stored value isn't the type the property expects
+                apply(node.GetValue<TValue>());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException($"AppSettings::CarryOver({legacyName})", ex);
+                return false;
+            }
+        }
 
         public class ResolutionSetting
         {

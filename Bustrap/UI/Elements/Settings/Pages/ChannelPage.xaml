@@ -113,7 +113,7 @@
             <ui:TextBox
         Width="200"
         Margin="5,0,0,0"
-        Padding="10,5,10,5" Text="{Binding BufferSizeKbtes, Mode=TwoWay}" />
+        Padding="10,5,10,5" Text="{Binding BufferSizeKilobytes, Mode=TwoWay}" />
         </controls:OptionControl>
 
         <TextBlock

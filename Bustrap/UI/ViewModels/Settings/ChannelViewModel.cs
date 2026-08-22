@@ -385,10 +385,10 @@ namespace Bustrap.UI.ViewModels.Settings
             set => App.Settings.Prop.BufferSizeKbte = value;
         }
 
-        public string BufferSizeKbtes
+        public string BufferSizeKilobytes
         {
-            get => App.Settings.Prop.BufferSizeKbtes;
-            set => App.Settings.Prop.BufferSizeKbtes = value;
+            get => App.Settings.Prop.BufferSizeKilobytes;
+            set => App.Settings.Prop.BufferSizeKilobytes = value;
         }
 
         private string _viewChannel;

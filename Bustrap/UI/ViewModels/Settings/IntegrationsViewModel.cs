@@ -229,10 +229,10 @@ namespace Bustrap.UI.ViewModels.Settings
             set => App.Settings.Prop.FFlagRPCDisplayer = value;
         }
 
-        public bool ServerUptimeBetterBLOXcuzitsbetterXD
+        public bool ShowServerUptime
         {
-            get => App.Settings.Prop.ServerUptimeBetterBLOXcuzitsbetterXD;
-            set => App.Settings.Prop.ServerUptimeBetterBLOXcuzitsbetterXD = value;
+            get => App.Settings.Prop.ShowServerUptime;
+            set => App.Settings.Prop.ShowServerUptime = value;
         }
 
         private void AccountWindow()
