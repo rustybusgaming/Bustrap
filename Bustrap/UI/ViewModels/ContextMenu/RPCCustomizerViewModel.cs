@@ -113,7 +113,7 @@ namespace Bustrap.UI.ViewModels.ContextMenu
         #endregion
 
         #region Helpers
-        private bool SetValue<T>(ref T field, T value, [CallerMemberName] string name = null)
+        private bool SetValue<T>(ref T field, T value, [CallerMemberName] string? name = null)
         {
             if (!SetField(ref field, value, name)) return false;
             DebouncedSave();
@@ -466,8 +466,8 @@ namespace Bustrap.UI.ViewModels.ContextMenu
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string name = null)
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;
             field = value;
