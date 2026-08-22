@@ -14,7 +14,7 @@ namespace Bustrap.UI.ViewModels.ContextMenu
     /// </summary>
     public sealed class MediaSessionViewModel : INotifyPropertyChanged, IDisposable
     {
-        private readonly MediaSessionWatcher _watcher = new();
+        private readonly MediaSessionWatcher _watcher = MediaSessionWatcher.Shared;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -29,7 +29,9 @@ namespace Bustrap.UI.ViewModels.ContextMenu
             PreviousCommand = new AsyncRelayCommand(async () => await _watcher.SkipPreviousAsync());
 
             _watcher.Changed += OnChanged;
-            _ = _watcher.StartAsync();
+
+            // the shared watcher may already have a session going
+            OnChanged(this, _watcher.Current);
         }
 
         private string _source = "";
@@ -113,8 +115,8 @@ namespace Bustrap.UI.ViewModels.ContextMenu
 
         public void Dispose()
         {
+            // shared instance - unsubscribe only, never dispose
             _watcher.Changed -= OnChanged;
-            _watcher.Dispose();
         }
     }
 }

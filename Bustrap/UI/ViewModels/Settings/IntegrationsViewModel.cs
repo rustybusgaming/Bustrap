@@ -219,6 +219,12 @@ namespace Bustrap.UI.ViewModels.Settings
             set => App.Settings.Prop.NotificationWindowShow = value;
         }
 
+        public bool SongChangeNotification
+        {
+            get => App.Settings.Prop.SongChangeNotification;
+            set => App.Settings.Prop.SongChangeNotification = value;
+        }
+
         public string gamename
         {
             get => App.Settings.Prop.CustomGameName;

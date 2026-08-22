@@ -33,6 +33,37 @@ namespace Bustrap.Integrations
         /// <summary>Raised on a background thread - marshal before touching UI.</summary>
         public event EventHandler<NowPlaying?>? Changed;
 
+        /// <summary>
+        /// Raised only when the track itself changes - not on play/pause, seeking
+        /// or the position ticking over. Also a background thread.
+        /// </summary>
+        public event EventHandler<NowPlaying>? TrackChanged;
+
+        private static MediaSessionWatcher? _shared;
+        private static readonly object _sharedLock = new();
+
+        /// <summary>
+        /// Process-wide instance. The tray menu and the music window both listen,
+        /// and holding one session manager rather than several keeps the event
+        /// traffic down. Deliberately never disposed - it lives as long as the app.
+        /// </summary>
+        public static MediaSessionWatcher Shared
+        {
+            get
+            {
+                lock (_sharedLock)
+                {
+                    if (_shared is null)
+                    {
+                        _shared = new MediaSessionWatcher();
+                        _ = _shared.StartAsync();
+                    }
+
+                    return _shared;
+                }
+            }
+        }
+
         private GlobalSystemMediaTransportControlsSessionManager? _manager;
         private GlobalSystemMediaTransportControlsSession? _session;
         private bool _disposed;
@@ -126,10 +157,26 @@ namespace Bustrap.Integrations
             }
         }
 
+        private string _lastTrackKey = "";
+
         private void Publish(NowPlaying? nowPlaying)
         {
             Current = nowPlaying;
             Changed?.Invoke(this, nowPlaying);
+
+            // SMTC re-fires on every play/pause and metadata touch, so the track
+            // has to be compared rather than trusting the event itself
+            string key = nowPlaying is null
+                ? ""
+                : $"{nowPlaying.Source}|{nowPlaying.Title}|{nowPlaying.Artist}";
+
+            if (key == _lastTrackKey)
+                return;
+
+            _lastTrackKey = key;
+
+            if (nowPlaying is not null && !string.IsNullOrWhiteSpace(nowPlaying.Title))
+                TrackChanged?.Invoke(this, nowPlaying);
         }
 
         /// <summary>

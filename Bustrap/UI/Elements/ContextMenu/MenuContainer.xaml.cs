@@ -133,6 +133,8 @@ namespace Bustrap.UI.Elements.ContextMenu
                 MusicMenuItem.Visibility = Visibility.Visible;
             }
 
+            MediaSessionWatcher.Shared.TrackChanged += OnTrackChanged;
+
             if (_watcher.RichPresence is not null)
                 RichPresenceMenuItem.Visibility = Visibility.Visible;
 
@@ -682,7 +684,49 @@ namespace Bustrap.UI.Elements.ContextMenu
             LoadFlags();
         }
 
-        private void Window_Closed(object sender, EventArgs e) => App.Logger.WriteLine("MenuContainer::Window_Closed", "Context menu container closed");
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            MediaSessionWatcher.Shared.TrackChanged -= OnTrackChanged;
+            App.Logger.WriteLine("MenuContainer::Window_Closed", "Context menu container closed");
+        }
+
+        /// <summary>
+        /// Same top-right toast the join-game notification uses, for whatever
+        /// Spotify / TIDAL / Apple Music just started playing.
+        /// </summary>
+        private void OnTrackChanged(object? sender, MediaSessionWatcher.NowPlaying track)
+        {
+            if (!App.Settings.Prop.SongChangeNotification)
+                return;
+
+            string subtitle = string.IsNullOrWhiteSpace(track.Artist)
+                ? track.Source
+                : $"{track.Artist} \u2022 {track.Source}";
+
+            // TrackChanged comes off a background thread
+            Dispatcher.InvokeAsync(() => ShowToast($"{track.Title}\n{subtitle}", 4));
+        }
+
+        private void ShowToast(string text, double durationSeconds)
+        {
+            try
+            {
+                if (App.Current.Resources["NotificationWindow"] is not NotificationWindow notificationWindow)
+                {
+                    notificationWindow = new NotificationWindow();
+                    App.Current.Resources["NotificationWindow"] = notificationWindow;
+                }
+
+                if (!notificationWindow.IsVisible)
+                    notificationWindow.Show();
+
+                notificationWindow.ShowNotification(text, null, durationSeconds);
+            }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException("MenuContainer::ShowToast", ex);
+            }
+        }
 
         private void RichPresenceMenuItem_Click(object sender, RoutedEventArgs e) => _watcher.RichPresence?.SetVisibility(((MenuItem)sender).IsChecked);
 

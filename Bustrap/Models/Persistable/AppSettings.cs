@@ -41,7 +41,8 @@ namespace Bustrap.Models.Persistable
         public bool ConfirmLaunches { get; set; } = true;
 
         public bool SmoothScrollBar { get; set; } = false; // wanna keep this on false so people may not be annoyed by it being on
-        public bool NotificationWindowShow { get; set; } = true;
+        public bool NotificationWindowShow { get; set; }
+        public bool SongChangeNotification { get; set; } = true;
         public bool BackgroundWindow { get; set; } = true;
         public bool UsePlaceId { get; set; } = false;
         public bool ClearFont { get; set; } = false;
