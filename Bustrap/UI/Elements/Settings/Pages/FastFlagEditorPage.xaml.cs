@@ -299,7 +299,9 @@ namespace Bustrap.UI.Elements.Settings.Pages
                 App.FastFlags.LoadBackup(dialog.LoadBackup.SelectedValue.ToString(), dialog.ClearFlags.IsChecked);
             }
 
-            Thread.Sleep(1000);
+            // Task.Delay, not Thread.Sleep - this runs on the UI thread and
+            // sleeping here froze the whole settings window for a second.
+            await Task.Delay(1000);
             ReloadList();
             await LoadKnownFlagsAsync();
             UpdateExistsColumn();

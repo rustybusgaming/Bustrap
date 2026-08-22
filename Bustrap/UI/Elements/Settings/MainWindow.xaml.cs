@@ -1218,23 +1218,45 @@ namespace Bustrap.UI.Elements.Settings
             }
         }
 
+        // How far the gradient slides, in the brush's relative coordinates, and
+        // how much it tilts across that travel.
+        private const double GradientTravel = 0.08;
+        private const double GradientTiltDegrees = 50;
+
         private void RootGrid_MouseMove(object sender, MouseEventArgs e)
         {
-            if (!App.Settings.Prop.GRADmentFR || sender is not FrameworkElement element ||
+            if (!App.Settings.Prop.GRADmentFR)
+            {
+                // The toggle can be switched off while the pointer is still in
+                // the window - without this the gradient stays stuck at
+                // whatever offset it had when the setting was disabled.
+                ResetBackgroundGradient();
+                return;
+            }
+
+            if (sender is not FrameworkElement element ||
                 element.ActualWidth <= 0 || element.ActualHeight <= 0)
                 return;
 
             Point position = e.GetPosition(element);
-            double horizontalOffset = (position.X / element.ActualWidth - 0.5) * 0.08;
-            double verticalOffset = (position.Y / element.ActualHeight - 0.5) * 0.08;
+            double horizontalOffset = (position.X / element.ActualWidth - 0.5) * GradientTravel;
+            double verticalOffset = (position.Y / element.ActualHeight - 0.5) * GradientTravel;
 
             BackgroundGradientTranslate.X = horizontalOffset;
             BackgroundGradientTranslate.Y = verticalOffset;
-            BackgroundGradientRotate.Angle = horizontalOffset * 50;
+            BackgroundGradientRotate.Angle = horizontalOffset * GradientTiltDegrees;
         }
 
-        private void RootGrid_MouseLeave(object sender, MouseEventArgs e)
+        private void RootGrid_MouseLeave(object sender, MouseEventArgs e) =>
+            ResetBackgroundGradient();
+
+        private void ResetBackgroundGradient()
         {
+            if (BackgroundGradientTranslate.X == 0 &&
+                BackgroundGradientTranslate.Y == 0 &&
+                BackgroundGradientRotate.Angle == 0)
+                return;
+
             BackgroundGradientTranslate.X = 0;
             BackgroundGradientTranslate.Y = 0;
             BackgroundGradientRotate.Angle = 0;

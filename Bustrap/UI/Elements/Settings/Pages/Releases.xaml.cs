@@ -9,11 +9,13 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Navigation;
+using System.Windows.Threading;
 using Wpf.Ui.Controls;
 using Process = System.Diagnostics.Process;
 using ProcessStartInfo = System.Diagnostics.ProcessStartInfo;
@@ -22,6 +24,8 @@ namespace Bustrap.UI.Elements.Settings.Pages
 {
     public partial class ReleasesPage
     {
+        private const string LOG_IDENT = "ReleasesPage";
+
         private static readonly Uri ReleasesApiUri =
             new("https://api.github.com/repos/rustybusgaming/Bustrap/releases");
 
@@ -29,12 +33,30 @@ namespace Bustrap.UI.Elements.Settings.Pages
         private static readonly string CacheFile =
             Path.Combine(Paths.Base, "Releases.json");
 
+        private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(5);
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         public ObservableCollection<GithubRelease> Releases { get; } = new();
         private readonly ICollectionView _releasesView;
 
+        private readonly DispatcherTimer _refreshTimer;
         private FileSystemWatcher? _cacheWatcher;
+        private CancellationTokenSource? _cts;
+
         private string? _etag;
-        private readonly TimeSpan _refreshInterval = TimeSpan.FromMinutes(5);
+
+        // The last payload actually rendered. Both the network fetch and the
+        // cache watcher can deliver the same JSON (writing the cache file makes
+        // the watcher fire), so this keeps the list from being torn down and
+        // rebuilt - which resets scroll position and the active search filter -
+        // when nothing has actually changed.
+        private string? _renderedJson;
+
+        private bool _initialLoadDone;
 
         private static HttpClient CreateHttpClient()
         {
@@ -55,26 +77,63 @@ namespace Bustrap.UI.Elements.Settings.Pages
 
             Directory.CreateDirectory(Path.GetDirectoryName(CacheFile)!);
 
-            StartCacheWatcher();
-            StartAutoRefresh();
+            _refreshTimer = new DispatcherTimer { Interval = RefreshInterval };
+            _refreshTimer.Tick += OnRefreshTick;
 
-            _ = LoadReleasesAsync(force: true);
+            // Polling and the file watcher only run while the page is on screen.
+            // Navigating away stops both, so repeated visits can't stack up
+            // background loops that keep hitting the GitHub API forever.
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
         }
 
-        private void StartAutoRefresh()
+        private async void OnLoaded(object sender, RoutedEventArgs e)
         {
-            _ = Task.Run(async () =>
-            {
-                while (true)
-                {
-                    await Task.Delay(_refreshInterval);
-                    await LoadReleasesAsync();
-                }
-            });
+            if (_cts is not null)
+                return;
+
+            var cts = new CancellationTokenSource();
+            _cts = cts;
+
+            StartCacheWatcher();
+            _refreshTimer.Start();
+
+            bool firstLoad = !_initialLoadDone;
+            _initialLoadDone = true;
+
+            if (firstLoad)
+                await LoadFromCacheAsync();
+
+            await LoadReleasesAsync(firstLoad, cts.Token);
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            _refreshTimer.Stop();
+
+            _cacheWatcher?.Dispose();
+            _cacheWatcher = null;
+
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+        }
+
+        private async void OnRefreshTick(object? sender, EventArgs e)
+        {
+            var cts = _cts;
+
+            if (cts is null)
+                return;
+
+            await LoadReleasesAsync(false, cts.Token);
         }
 
         private void StartCacheWatcher()
         {
+            if (_cacheWatcher is not null)
+                return;
+
             _cacheWatcher = new FileSystemWatcher
             {
                 Path = Path.GetDirectoryName(CacheFile)!,
@@ -84,19 +143,17 @@ namespace Bustrap.UI.Elements.Settings.Pages
                                NotifyFilters.FileName
             };
 
-            _cacheWatcher.Changed += (_, __) => Dispatcher.Invoke(async () =>
-                await LoadFromCacheAsync());
-
-            _cacheWatcher.Created += (_, __) => Dispatcher.Invoke(async () =>
-                await LoadFromCacheAsync());
+            _cacheWatcher.Changed += OnCacheFileTouched;
+            _cacheWatcher.Created += OnCacheFileTouched;
 
             _cacheWatcher.EnableRaisingEvents = true;
         }
 
-        private async Task LoadReleasesAsync(bool force = false)
-        {
+        private async void OnCacheFileTouched(object sender, FileSystemEventArgs e) =>
             await LoadFromCacheAsync();
 
+        private async Task LoadReleasesAsync(bool force, CancellationToken token)
+        {
             try
             {
                 using var request =
@@ -106,29 +163,33 @@ namespace Bustrap.UI.Elements.Settings.Pages
                     request.Headers.IfNoneMatch.Add(
                         new EntityTagHeaderValue(_etag));
 
-                using var response = await HttpClient.SendAsync(request);
+                using var response = await HttpClient.SendAsync(request, token);
 
                 if (response.StatusCode == HttpStatusCode.NotModified)
                     return;
 
-                response.EnsureSuccessStatusCode();
+                if (!response.IsSuccessStatusCode)
+                {
+                    App.Logger.WriteLine(LOG_IDENT,
+                        $"Could not fetch releases: {(int)response.StatusCode} {response.ReasonPhrase}");
+                    return;
+                }
 
                 _etag = response.Headers.ETag?.Tag;
 
-                var json = await response.Content.ReadAsStringAsync();
-                await File.WriteAllTextAsync(CacheFile, json);
+                string json = await response.Content.ReadAsStringAsync(token);
 
-                var releases = JsonSerializer.Deserialize<GithubRelease[]>(
-                    json,
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }) ?? Array.Empty<GithubRelease>();
+                await File.WriteAllTextAsync(CacheFile, json, token);
 
-                UpdateReleasesCollection(releases);
+                Render(json);
             }
-            catch
+            catch (OperationCanceledException)
             {
+                // page was navigated away from, or the request timed out
+            }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException($"{LOG_IDENT}::LoadReleasesAsync", ex);
             }
         }
 
@@ -139,25 +200,34 @@ namespace Bustrap.UI.Elements.Settings.Pages
 
             try
             {
-                var json = await File.ReadAllTextAsync(CacheFile);
-
-                var releases = JsonSerializer.Deserialize<GithubRelease[]>(
-                    json,
-                    new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }) ?? Array.Empty<GithubRelease>();
-
-                UpdateReleasesCollection(releases);
+                Render(await File.ReadAllTextAsync(CacheFile));
             }
-            catch
+            catch (IOException)
             {
+                // the cache file is mid-write; the next event will pick it up
             }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException($"{LOG_IDENT}::LoadFromCacheAsync", ex);
+            }
+        }
+
+        private void Render(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json) || json == _renderedJson)
+                return;
+
+            var releases = JsonSerializer.Deserialize<GithubRelease[]>(json, JsonOptions)
+                           ?? Array.Empty<GithubRelease>();
+
+            _renderedJson = json;
+
+            UpdateReleasesCollection(releases);
         }
 
         private void UpdateReleasesCollection(GithubRelease[] releases)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            Application.Current?.Dispatcher.Invoke(() =>
             {
                 Releases.Clear();
                 foreach (var rel in releases)
@@ -170,8 +240,11 @@ namespace Bustrap.UI.Elements.Settings.Pages
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var query =
-                (sender as System.Windows.Forms.TextBox)?.Text?.Trim() ?? string.Empty;
+            // SearchBox is a ui:TextBox, which derives from the WPF TextBox -
+            // casting to the WinForms one silently produced null and left the
+            // filter permanently disabled.
+            string query =
+                (sender as System.Windows.Controls.TextBox)?.Text?.Trim() ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -185,8 +258,7 @@ namespace Bustrap.UI.Elements.Settings.Pages
 
                     bool Matches(string? s) =>
                         !string.IsNullOrEmpty(s) &&
-                        s.IndexOf(query,
-                            StringComparison.OrdinalIgnoreCase) >= 0;
+                        s.Contains(query, StringComparison.OrdinalIgnoreCase);
 
                     return Matches(r.Name) ||
                            Matches(r.TagName) ||
@@ -210,7 +282,10 @@ namespace Bustrap.UI.Elements.Settings.Pages
                     UseShellExecute = true
                 });
             }
-            catch { }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException($"{LOG_IDENT}::Hyperlink_RequestNavigate", ex);
+            }
         }
 
         public class GithubRelease
