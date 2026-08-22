@@ -572,7 +572,10 @@ namespace Bustrap.Integrations.SwiftTunnel
                 {
                     NativeVpn.swifttunnel_split_tunnel_close();
                 }
-                catch { }
+                catch (Exception exception)
+                {
+                    App.Logger.WriteException("VpnConnection::Dispose", exception);
+                }
             }
 
             if (_initialized)

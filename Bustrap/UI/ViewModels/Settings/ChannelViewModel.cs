@@ -588,17 +588,6 @@ namespace Bustrap.UI.ViewModels.Settings
         }
 
 
-        public string ChannelHash
-        {
-            get => App.Settings.Prop.ChannelHash;
-            set
-            {
-                const string VersionHashPattern = @"version-(.*)";
-                if (string.IsNullOrEmpty(value) || Regex.IsMatch(value, VersionHashPattern))
-                    App.Settings.Prop.ChannelHash = value;
-            }
-        }
-
         public bool UpdateRoblox
         {
             get => App.Settings.Prop.UpdateRoblox;

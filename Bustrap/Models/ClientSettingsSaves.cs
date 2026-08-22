@@ -47,8 +47,9 @@ public static class BustrapRobloxSettingsManager // lowk didnt know what tf to n
             string json = JsonSerializer.Serialize(settings, options);
             File.WriteAllText(FilePath, json);
         }
-        catch
+        catch (Exception ex)
         {
+            App.Logger.WriteException("BustrapRobloxSettingsManager::Save", ex);
         }
     }
 }

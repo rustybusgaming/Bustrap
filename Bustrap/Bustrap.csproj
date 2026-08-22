@@ -187,13 +187,6 @@
         <PackageReference Include="securifybv.ShellLink" Version="0.1.0" />
         <PackageReference Include="SharpCompress" Version="0.48.0" />
 
-        <PackageReference Include="SharpDX" Version="4.2.0" />
-        <PackageReference Include="SharpDX.D3DCompiler" Version="4.2.0" />
-        <PackageReference Include="SharpDX.Desktop" Version="4.2.0" />
-        <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
-        <PackageReference Include="SharpDX.DXGI" Version="4.2.0" />
-        <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
-
         <PackageReference Include="SharpZipLib" Version="1.4.2" />
         <PackageReference Include="System.Management" Version="10.0.3" />
         <PackageReference Include="WpfAnimatedGif" Version="2.0.2" />
@@ -241,7 +234,6 @@
             <Pack>True</Pack>
             <PackagePath>\</PackagePath>
         </None>
-        <None Include="Utility\DarkTexturesMod.cs" />
     </ItemGroup>
 
     <ItemGroup>

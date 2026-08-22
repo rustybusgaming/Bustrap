@@ -39,7 +39,10 @@ namespace Bustrap.UI.ViewModels.Settings
             {
                 _doc?.Save(_settingsPath);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException("GBSEditorViewModel::SaveSettings", ex);
+            }
         }
 
         private string GetValue(string name, string defaultValue)

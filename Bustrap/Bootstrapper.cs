@@ -421,7 +421,10 @@ namespace Bustrap
             else if (_appPid != 0)
             {
                 try { Process.GetProcessById(_appPid).Kill(); }
-                catch { }
+                catch (Exception error)
+                {
+                    App.Logger.WriteException("Bootstrapper::Cancel", error);
+                }
             }
 
             Dialog?.CloseBootstrapper();
@@ -651,7 +654,10 @@ namespace Bustrap
 
                 _ = Task.Run(() => TryApplyPriorityAsync(_robloxProcess, LOG_IDENT, ct), ct);
 
-                try { _robloxProcess.WaitForInputIdle(1000); } catch { }
+                try { _robloxProcess.WaitForInputIdle(1000); } catch (Exception exception)
+                {
+                    App.Logger.WriteException("Bootstrapper::WaitForLogFileAsync", exception);
+                }
 
                 StartCpuLimitWatcherIfNeeded();
                 RestartMemoryCleanerFromSettings();
@@ -1031,7 +1037,10 @@ namespace Bustrap
                 if (cpu > CpuHighThreshold)
                     process.PriorityClass = ProcessPriorityClass.AboveNormal;
 
-                try { process.PriorityBoostEnabled = true; } catch { }
+                try { process.PriorityBoostEnabled = true; } catch (Exception error)
+                {
+                    App.Logger.WriteException("Bootstrapper::MonitorProcessCpu", error);
+                }
                 SetPriorityClass(process.Handle, PROCESS_MODE_BACKGROUND_END);
             }
             catch (Exception ex) when (!token.IsCancellationRequested)
@@ -1299,7 +1308,10 @@ namespace Bustrap
                 async () =>
                 {
                     foreach (var f in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
-                        try { File.SetAttributes(f, FileAttributes.Normal); } catch { }
+                        try { File.SetAttributes(f, FileAttributes.Normal); } catch (Exception exception)
+                        {
+                            App.Logger.WriteException("Bootstrapper::SafeDeleteDirectoryAsync", exception);
+                        }
                     Directory.Delete(path, recursive: true);
                     await Task.CompletedTask;
                 },
@@ -1765,7 +1777,10 @@ namespace Bustrap
             finally
             {
                 progressCts.Cancel();
-                try { await progressTask; } catch { }
+                try { await progressTask; } catch (Exception ex)
+                {
+                    App.Logger.WriteException("Bootstrapper::DownloadMultipartAsync", ex);
+                }
             }
 
             App.Logger.WriteLine(logIdent, $"Downloaded {totalRead:N0} bytes (multi-part)");

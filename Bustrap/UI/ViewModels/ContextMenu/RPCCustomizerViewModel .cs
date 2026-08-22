@@ -85,7 +85,10 @@ namespace Bustrap.UI.ViewModels.ContextMenu
             LoadConfigInternal();
             AppDomain.CurrentDomain.ProcessExit += (_, __) =>
             {
-                try { SaveConfigInternal(); } catch { }
+                try { SaveConfigInternal(); } catch (Exception ex)
+                {
+                    App.Logger.WriteException("RPCCustomizerViewModel::ProcessExit", ex);
+                }
             };
         }
 
@@ -160,7 +163,10 @@ namespace Bustrap.UI.ViewModels.ContextMenu
                 if (_dispatcher.CheckAccess()) action();
                 else _dispatcher.BeginInvoke(action, DispatcherPriority.Background);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException("RPCCustomizerViewModel::DispatcherInvokeSafe", ex);
+            }
         }
 
         private void SafeUpdateStatus(string msg, Brush color)
@@ -290,8 +296,14 @@ namespace Bustrap.UI.ViewModels.ContextMenu
             lock (_rpcLock)
             {
                 if (_client == null) return;
-                try { _client.ClearPresence(); } catch { }
-                try { _client.Dispose(); } catch { }
+                try { _client.ClearPresence(); } catch (Exception exception)
+                {
+                    App.Logger.WriteException("RPCCustomizerViewModel::StopClientIfRunning", exception);
+                }
+                try { _client.Dispose(); } catch (Exception error)
+                {
+                    App.Logger.WriteException("RPCCustomizerViewModel::StopClientIfRunning", error);
+                }
             }
         }
 

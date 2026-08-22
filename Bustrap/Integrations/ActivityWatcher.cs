@@ -156,7 +156,10 @@ namespace Bustrap.Integrations
                         : response.Data.Sum(s => s.Playing);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                App.Logger.WriteException("ActivityWatcher::GetPlayerCount", ex);
+            }
 
             int countFromLogs = 1;
             if (Data.PlayerLogs != null && Data.PlayerLogs.Count > 0)

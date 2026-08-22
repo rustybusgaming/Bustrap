@@ -61,8 +61,9 @@ namespace Bustrap.UI.Elements.Settings.Pages
                 {
                     ApplyBackground(backgroundImagePath);
                 }
-                catch
+                catch (Exception error)
                 {
+                    App.Logger.WriteException("AIChatPage::LoadSavedBackground", error);
                 }
             }
         }

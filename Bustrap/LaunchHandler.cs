@@ -328,7 +328,10 @@ namespace Bustrap
                 {
                     if (mutex != null)
                     {
-                        try { mutex.ReleaseMutex(); } catch { }
+                        try { mutex.ReleaseMutex(); } catch (Exception ex)
+                        {
+                            App.Logger.WriteException("LaunchHandler::LaunchRoblox", ex);
+                        }
                         mutex.Dispose();
                     }
 

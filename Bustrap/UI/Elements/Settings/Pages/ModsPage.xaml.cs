@@ -220,7 +220,10 @@ namespace Bustrap.UI.Elements.Settings.Pages
                     foreach (var file in Directory.GetFiles(dir))
                     {
                         if (!preservePaths.Contains(file))
-                            try { File.Delete(file); } catch { }
+                            try { File.Delete(file); } catch (Exception ex)
+                            {
+                                App.Logger.WriteException("ModsPage::ModGenerator_Click", ex);
+                            }
                     }
 
                     foreach (var subDir in Directory.GetDirectories(dir))
@@ -233,7 +236,10 @@ namespace Bustrap.UI.Elements.Settings.Pages
                                 if (Directory.Exists(subDir) && !Directory.EnumerateFileSystemEntries(subDir).Any())
                                     Directory.Delete(subDir);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                App.Logger.WriteException("ModsPage::ModGenerator_Click", ex);
+                            }
                         }
                     }
                 }

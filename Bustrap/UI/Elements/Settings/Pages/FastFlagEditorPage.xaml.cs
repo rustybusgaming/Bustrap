@@ -161,8 +161,9 @@ namespace Bustrap.UI.Elements.Settings.Pages
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    App.Logger.WriteException("FastFlagEditorPage::LoadKnownFlagsAsync", ex);
                 }
             }
         }

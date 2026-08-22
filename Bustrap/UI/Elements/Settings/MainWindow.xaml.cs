@@ -1043,7 +1043,10 @@ namespace Bustrap.UI.Elements.Settings
                         _appearanceViewModel.BackgroundFilePath = newSettings.BackgroundFilePath;
                         _appearanceViewModel.GradientOpacity = newSettings.GradientOpacity;
                     }
-                    catch {}
+                    catch (Exception ex)
+                    {
+                        App.Logger.WriteException("MainWindow::InitializeBackgroundSettingsWatcher", ex);
+                    }
                 });
             };
 

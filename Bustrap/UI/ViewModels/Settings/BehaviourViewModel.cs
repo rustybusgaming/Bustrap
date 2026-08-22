@@ -91,7 +91,10 @@ namespace Bustrap.UI.ViewModels.Settings
                         break;
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    App.Logger.WriteException("BehaviourViewModel::LoadCpuOptions", ex);
+                }
 
                 CpuModelName = model;
                 CpuSummary = $"{model} | {physicalCount} cores / {logicalCount} threads";
@@ -106,8 +109,6 @@ namespace Bustrap.UI.ViewModels.Settings
 
                 _selectedCpuPriority = App.Settings.Prop.SelectedCpuPriority;
                 OnPropertyChanged(nameof(SelectedCpuPriority));
-                App.Settings.Prop.TotalLogicalCores = logicalCount;
-                App.Settings.Prop.TotalPhysicalCores = physicalCount;
             }
             catch
             {
@@ -181,22 +182,10 @@ namespace Bustrap.UI.ViewModels.Settings
             set => App.Settings.Prop.IsBetterServersEnabled = value;
         }
 
-        public bool OverClockCPU
-        {
-            get => App.Settings.Prop.OverClockCPU;
-            set => App.Settings.Prop.OverClockCPU = value;
-        }
-
         public bool IsGameEnabled
         {
             get => App.Settings.Prop.IsGameEnabled;
             set => App.Settings.Prop.IsGameEnabled = value;
-        }
-
-        public bool OverClockGPU
-        {
-            get => App.Settings.Prop.OverClockGPU;
-            set => App.Settings.Prop.OverClockGPU = value;
         }
 
         public bool OptimizeRoblox

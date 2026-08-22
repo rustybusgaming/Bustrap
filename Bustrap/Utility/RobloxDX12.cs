@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Bustrap;
+
 namespace RobloxDX12Optimizer
 {
     public static class RobloxDx12Optimizer
@@ -190,10 +192,16 @@ namespace RobloxDX12Optimizer
                                 list.Add(p);
                         }
                     }
-                    catch {}
+                    catch (Exception caught)
+                    {
+                        App.Logger.WriteException("RobloxDx12Optimizer::FindRobloxProcesses", caught);
+                    }
                 }
             }
-            catch {}
+            catch (Exception exception)
+            {
+                App.Logger.WriteException("RobloxDx12Optimizer::FindRobloxProcesses", exception);
+            }
             return list.Where(p =>
             {
                 try { p.Refresh(); return !p.HasExited; }
@@ -269,7 +277,10 @@ namespace RobloxDX12Optimizer
                             if (t.PriorityLevel == ThreadPriorityLevel.Normal)
                                 t.PriorityLevel = ThreadPriorityLevel.AboveNormal;
                         }
-                        catch { }
+                        catch (Exception error)
+                        {
+                            App.Logger.WriteException("RobloxDx12Optimizer::ApplyPerProcessTweaks", error);
+                        }
                     }
                     Logger.Info($"Attempted thread priority boost for PID {proc.Id}");
                 }

@@ -193,7 +193,10 @@ namespace Bustrap.UI.Elements.ContextMenu
                     iconUrl = data.UniverseDetails?.Thumbnail.ImageUrl;
                     universeName = data.UniverseDetails?.Data.Name ?? universeName;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    App.Logger.WriteException("MenuContainer::UpdateCurrentGameIconAsync", ex);
+                }
             }
             Dispatcher.Invoke(() => UpdateCurrentGameInfo(universeName, iconUrl));
         }
@@ -434,7 +437,10 @@ namespace Bustrap.UI.Elements.ContextMenu
                     iconUrl = data.UniverseDetails?.Thumbnail.ImageUrl;
                     universeName = data.UniverseDetails?.Data.Name ?? universeName;
                 }
-                catch { }
+                catch (Exception error)
+                {
+                    App.Logger.WriteException("MenuContainer::ShowJoinNotification", error);
+                }
             }
 
             int players = await _activityWatcher.GetPlayerCount();
@@ -449,7 +455,10 @@ namespace Bustrap.UI.Elements.ContextMenu
                         serverLocation = location;
                 }
             }
-            catch { }
+            catch (Exception error)
+            {
+                App.Logger.WriteException("MenuContainer::ShowJoinNotification", error);
+            }
             string playerText = players > 1 ? $" • {players} Players" : string.Empty;
             string text = $"{universeName}\n{serverLocation}{playerText}";
 
@@ -469,7 +478,10 @@ namespace Bustrap.UI.Elements.ContextMenu
                     notificationWindow.Activate();
                     notificationWindow.ShowNotification(text, iconUrl, 6);
                 }
-                catch { }
+                catch (Exception error)
+                {
+                    App.Logger.WriteException("MenuContainer::ShowJoinNotification", error);
+                }
             });
         }
 

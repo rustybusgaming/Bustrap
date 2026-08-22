@@ -355,7 +355,10 @@ namespace Bustrap.UI.ViewModels.Settings
                 Directory.CreateDirectory(Paths.Base);
                 foreach (var old in Directory.GetFiles(Paths.Base, "startup_audio.*"))
                 {
-                    try { File.Delete(old); } catch { }
+                    try { File.Delete(old); } catch (Exception ex)
+                    {
+                        App.Logger.WriteException("AppearanceViewModel::ImportStartupAudio", ex);
+                    }
                 }
                 string newFileName = "startup_audio" + Path.GetExtension(selectedPath);
                 string newPath = Path.Combine(Paths.Base, newFileName);
@@ -374,7 +377,10 @@ namespace Bustrap.UI.ViewModels.Settings
             {
                 foreach (var old in Directory.GetFiles(Paths.Base, "startup_audio.*"))
                 {
-                    try { File.Delete(old); } catch { }
+                    try { File.Delete(old); } catch (Exception error)
+                    {
+                        App.Logger.WriteException("AppearanceViewModel::RemoveStartupAudio", error);
+                    }
                 }
 
                 AudioEvents.RaiseStartupAudioChanged(null);
@@ -516,7 +522,10 @@ namespace Bustrap.UI.ViewModels.Settings
                 Directory.CreateDirectory(Paths.Base);
                 foreach (var old in Directory.GetFiles(Paths.Base, "bootstrapper_bg.*"))
                 {
-                    try { File.Delete(old); } catch { }
+                    try { File.Delete(old); } catch (Exception error)
+                    {
+                        App.Logger.WriteException("AppearanceViewModel::ImportBackground", error);
+                    }
                 }
                 string newFileName = "bootstrapper_bg" + Path.GetExtension(selectedPath);
                 string newPath = Path.Combine(Paths.Base, newFileName);
@@ -541,7 +550,10 @@ namespace Bustrap.UI.ViewModels.Settings
             {
                 foreach (var old in Directory.GetFiles(Paths.Base, "bootstrapper_bg.*"))
                 {
-                    try { File.Delete(old); } catch { }
+                    try { File.Delete(old); } catch (Exception error)
+                    {
+                        App.Logger.WriteException("AppearanceViewModel::RemoveBackground", error);
+                    }
                 }
                 BackgroundEvents.RaiseBackgroundChanged(null);
             }

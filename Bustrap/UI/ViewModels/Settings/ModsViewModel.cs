@@ -1022,9 +1022,10 @@ namespace Bustrap.UI.ViewModels.Settings
                 Gap = (parts.Length > 5 && int.TryParse(parts[5], out var gapVal)) ? gapVal : 4;
                 CursorOpacity = (parts.Length > 6 && double.TryParse(parts[6], out var opVal)) ? opVal : 1.0;
             }
-            catch
+            catch (Exception error)
             {
                 // dont catch anything... UWU we catch UWU
+                App.Logger.WriteException("ModsViewModel::ApplyCode", error);
             }
         }
 

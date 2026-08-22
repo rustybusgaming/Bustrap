@@ -177,7 +177,10 @@ namespace Bustrap.RobloxInterfaces
                         return null;
                     }
                 }
-                catch { }
+                catch (Exception error)
+                {
+                    App.Logger.WriteException("Deployment::InitializeConnectivity", error);
+                }
             }
 
             return new Exception("Failed to connect to any setup mirrors.");

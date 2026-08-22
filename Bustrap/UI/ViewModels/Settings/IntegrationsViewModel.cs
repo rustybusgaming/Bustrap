@@ -211,12 +211,6 @@ namespace Bustrap.UI.ViewModels.Settings
             set => App.Settings.Prop.NotificationWindowShow = value;
         }
 
-        public bool exitondissy
-        {
-            get => App.Settings.Prop.exitondissy;
-            set => App.Settings.Prop.exitondissy = value;
-        }
-
         public string gamename
         {
             get => App.Settings.Prop.CustomGameName;

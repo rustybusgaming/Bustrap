@@ -291,9 +291,10 @@ namespace Bustrap.Integrations.SwiftTunnel
                         return true;
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
                     // Ignore
+                    App.Logger.WriteException("SwiftTunnelService::IsRobloxRunning", ex);
                 }
             }
 
