@@ -687,6 +687,16 @@ namespace Bustrap.UI.Elements.ContextMenu
         private void Window_Closed(object sender, EventArgs e)
         {
             MediaSessionWatcher.Shared.TrackChanged -= OnTrackChanged;
+
+            // A DispatcherTimer keeps a reference to its Tick handler, and so to
+            // this window. Left running they fire forever after the menu closes
+            // - the play timer every second, memory every two, and the closest
+            // server one doing network work every ten - and the window can never
+            // be collected.
+            closestServerTimer?.Stop();
+            memoryTimer?.Stop();
+            playTimer?.Stop();
+
             App.Logger.WriteLine("MenuContainer::Window_Closed", "Context menu container closed");
         }
 

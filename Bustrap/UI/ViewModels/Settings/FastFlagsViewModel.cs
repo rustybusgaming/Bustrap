@@ -847,7 +847,7 @@ namespace Bustrap.UI.ViewModels.Settings
                     App.FastFlags.SetPreset("Grass.Movement", value.ToString());
                 }
 
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedGrassMovementFactor)));
+                OnPropertyChanged();
             }
         }
 
@@ -878,9 +878,6 @@ namespace Bustrap.UI.ViewModels.Settings
                 // resolution back to Roblox
                 App.FastFlags.SetPreset("Rendering.Dynamic.Resolution", DynamicResolutions[value]);
 
-                // OnPropertyChanged, not PropertyChanged?.Invoke - this class
-                // shadows the base event with `new`, and WPF is bound to the
-                // base one, so invoking the shadowing event notifies nobody
                 OnPropertyChanged();
             }
         }
@@ -1432,20 +1429,11 @@ namespace Bustrap.UI.ViewModels.Settings
         }
 
 
-        // INotifyPropertyChanged implementation
-        public new event PropertyChangedEventHandler? PropertyChanged;
-
-        protected bool SetProperty<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
-        {
-            if (!Equals(field, newValue))
-            {
-                field = newValue;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-                return true;
-            }
-
-            return false;
-        }
+        // PropertyChanged and SetProperty both come from
+        // NotifyPropertyChangedViewModel. This class used to redeclare them
+        // with `new`, which hid the members INotifyPropertyChanged is
+        // implemented against - so every notification raised through the
+        // shadowing pair reached nobody and the bound control never updated.
 
         private System.Collections.IEnumerable? profileModes;
 
