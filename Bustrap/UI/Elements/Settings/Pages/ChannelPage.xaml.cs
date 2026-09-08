@@ -26,8 +26,19 @@ namespace Bustrap.UI.Elements.Settings.Pages
             DataContext = new ChannelViewModel();
 
             _versionTimer = new DispatcherTimer { Interval = VersionPollInterval };
-            _versionTimer.Tick += async (_, _) => await GetRobloxVersionAPPAsync();
-
+            _versionTimer.Tick += async (_, _) =>
+            {
+                _versionTimer.Stop();
+                try
+                {
+                    await GetRobloxVersionAPPAsync();
+                }
+                finally
+                {
+                    if (IsLoaded)
+                        _versionTimer.Start();
+                }
+            };
             // Polling runs only while the page is on screen. It used to be a
             // detached `while (true)` started in the constructor: never
             // cancelled, holding a reference to the page so it could never be
