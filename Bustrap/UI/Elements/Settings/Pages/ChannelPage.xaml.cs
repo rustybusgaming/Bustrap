@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Threading;
 using Bustrap.UI.Elements.Dialogs;
 using Bustrap.UI.ViewModels.Settings;
 using Wpf.Ui.Controls;
@@ -13,12 +14,46 @@ namespace Bustrap.UI.Elements.Settings.Pages
 {
     public partial class ChannelPage
     {
+        // The installed Roblox version only changes when Roblox updates, so
+        // this does not need to be anywhere near as eager as it was.
+        private static readonly TimeSpan VersionPollInterval = TimeSpan.FromSeconds(5);
+
+        private readonly DispatcherTimer _versionTimer;
+
         public ChannelPage()
         {
             InitializeComponent();
-            _ = AutoUpdateRobloxVersionAsync();
             DataContext = new ChannelViewModel();
+
+            _versionTimer = new DispatcherTimer { Interval = VersionPollInterval };
+            _versionTimer.Tick += async (_, _) =>
+            {
+                _versionTimer.Stop();
+                try
+                {
+                    await GetRobloxVersionAPPAsync();
+                }
+                finally
+                {
+                    if (IsLoaded)
+                        _versionTimer.Start();
+                }
+            };
+            // Polling runs only while the page is on screen. It used to be a
+            // detached `while (true)` started in the constructor: never
+            // cancelled, holding a reference to the page so it could never be
+            // collected, and starting a fresh loop on every visit.
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
         }
+
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            _versionTimer.Start();
+            await GetRobloxVersionAPPAsync();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e) => _versionTimer.Stop();
 
         private void ToggleSwitch_Checked_1(object sender, RoutedEventArgs e)
         {
@@ -36,22 +71,6 @@ namespace Bustrap.UI.Elements.Settings.Pages
                 MessageBoxImage.Warning,
                 MessageBoxButton.OK
             );
-        }
-
-        private async Task AutoUpdateRobloxVersionAsync()
-        {
-            while (true)
-            {
-                try
-                {
-                    await GetRobloxVersionAPPAsync();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[AutoUpdate] Error updating Roblox version: {ex.Message}");
-                }
-                await Task.Delay(1000);
-            }
         }
 
         private async Task GetRobloxVersionAPPAsync()
