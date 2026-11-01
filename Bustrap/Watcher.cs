@@ -128,6 +128,9 @@ namespace Bustrap
         {
             App.Logger.WriteLine("Watcher::Dispose", "Disposing Watcher");
 
+            // first, so the desktop resolution comes back before anything else
+            // tears down
+            ActivityWatcher?.Dispose();
             IntegrationWatcher?.Dispose();
             _notifyIcon?.Dispose();
             RichPresence?.Dispose();

@@ -8,7 +8,10 @@ namespace Bustrap.Integrations
     public static class InGameResolutionApplier
     {
         private const int ENUM_CURRENT_SETTINGS = -1;
-        private const int CDS_UPDATEREGISTRY = 0x01;
+        // 0 = change the mode for this session only. CDS_UPDATEREGISTRY (0x01)
+        // also wrote it to the registry, so if Bustrap died before restoring,
+        // the desktop stayed at the game resolution even across a reboot.
+        private const int CDS_DYNAMIC = 0;
         private const int DISP_CHANGE_SUCCESSFUL = 0;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -68,7 +71,7 @@ namespace Bustrap.Integrations
             dm.dmBitsPerPel = 32;
             dm.dmFields = 0x180000 | 0x400000;
 
-            int result = ChangeDisplaySettings(ref dm, CDS_UPDATEREGISTRY);
+            int result = ChangeDisplaySettings(ref dm, CDS_DYNAMIC);
 
             if (result != DISP_CHANGE_SUCCESSFUL)
             {
