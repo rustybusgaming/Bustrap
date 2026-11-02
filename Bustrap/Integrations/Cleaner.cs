@@ -23,17 +23,15 @@ namespace Bustrap.Integrations
 
             App.Logger.WriteLine(LOG_IDENT, "Cleaner has started");
 
-            var MaxFileAge = App.Settings.Prop.CleanerOptions switch
-            {
-                CleanerOptions.OneDay => 1,
-                CleanerOptions.OneWeek => 7,
-                CleanerOptions.OneMonth => 30,
-                CleanerOptions.TwoMonths => 60,
-                CleanerOptions.Never => int.MaxValue,
-                _ => int.MaxValue,
-            };
+            TimeSpan? maxAge = MaxAge(App.Settings.Prop.CleanerOptions);
 
-            var Threshold = DateTime.Now.AddHours(-MaxFileAge);
+            if (maxAge is null)
+            {
+                App.Logger.WriteLine(LOG_IDENT, "Cleaner is set to never, nothing to do");
+                return;
+            }
+
+            var Threshold = DateTime.Now - maxAge.Value;
 
             foreach (var directory in Directories)
             {
@@ -80,6 +78,27 @@ namespace Bustrap.Integrations
 
             App.Logger.WriteLine(LOG_IDENT, "Cleaner finished");
         }
+
+        /// <summary>
+        /// How old a file has to be before the cleaner removes it, or null for
+        /// "never". These are days. The threshold used to be built with
+        /// AddHours, so "one month" deleted anything older than 30 hours -
+        /// including the downloaded package cache, forcing re-downloads every
+        /// couple of days.
+        ///
+        /// Never, and any option added without updating this switch, return
+        /// null rather than a huge number. The old int.MaxValue fallback put the
+        /// threshold about 245,000 years in the past, which DateTime cannot
+        /// represent, so AddHours threw. The caller happened to skip Never.
+        /// </summary>
+        public static TimeSpan? MaxAge(CleanerOptions option) => option switch
+        {
+            CleanerOptions.OneDay => TimeSpan.FromDays(1),
+            CleanerOptions.OneWeek => TimeSpan.FromDays(7),
+            CleanerOptions.OneMonth => TimeSpan.FromDays(30),
+            CleanerOptions.TwoMonths => TimeSpan.FromDays(60),
+            _ => null,
+        };
 
         private static bool VerifyFile(string file, DateTime Threshold)
         {

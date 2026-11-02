@@ -178,32 +178,65 @@ namespace Bustrap.Integrations
         {
             const string LOG_IDENT = "ActivityWatcher::Start";
 
-            FileInfo logFileInfo;
+            // async void, so anything escaping here goes to
+            // App.GlobalExceptionHandler, which shows an error dialog and
+            // terminates Bustrap. Activity tracking failing has to degrade -
+            // no rich presence, no server info - not take the app down with it.
+            try
+            {
+                await RunAsync();
+            }
+            catch (Exception ex)
+            {
+                App.Logger.WriteLine(LOG_IDENT, "Activity tracking stopped");
+                App.Logger.WriteException(LOG_IDENT, ex);
+            }
+        }
+
+        private async Task RunAsync()
+        {
+            const string LOG_IDENT = "ActivityWatcher::Start";
+
+            FileInfo? logFileInfo = null;
 
             if (string.IsNullOrEmpty(LogLocation))
             {
                 string logDirectory = Path.Combine(Paths.LocalAppData, "Roblox\\logs");
 
-                if (!Directory.Exists(logDirectory))
-                    return;
-
                 App.Logger.WriteLine(LOG_IDENT, "Opening Roblox log file...");
 
-                while (true)
+                // Wait for Roblox to write this session's log. The folder can be
+                // missing on a first launch or empty after the cleaner runs, and
+                // Roblox creates the file a moment after it starts - none of that
+                // is an error. This used to call .First() on the search, which
+                // threw on an empty folder instead of waiting.
+                while (!IsDisposed)
                 {
-                    logFileInfo = new DirectoryInfo(logDirectory)
-                        .GetFiles()
-                        .Where(x => x.Name.Contains("Player", StringComparison.OrdinalIgnoreCase)
-                                 && x.CreationTime <= DateTime.Now)
-                        .OrderByDescending(x => x.CreationTime)
-                        .First();
+                    FileInfo? newest = Directory.Exists(logDirectory)
+                        ? new DirectoryInfo(logDirectory)
+                            .GetFiles()
+                            .Where(x => x.Name.Contains("Player", StringComparison.OrdinalIgnoreCase)
+                                     && x.CreationTime <= DateTime.Now)
+                            .OrderByDescending(x => x.CreationTime)
+                            .FirstOrDefault()
+                        : null;
 
-                    if (logFileInfo.CreationTime.AddSeconds(15) > DateTime.Now)
+                    if (newest is not null && newest.CreationTime.AddSeconds(15) > DateTime.Now)
+                    {
+                        logFileInfo = newest;
                         break;
+                    }
 
-                    App.Logger.WriteLine(LOG_IDENT, $"Could not find recent enough log file, waiting... (newest is {logFileInfo.Name})");
+                    App.Logger.WriteLine(LOG_IDENT, newest is null
+                        ? "No Roblox log file yet, waiting..."
+                        : $"Could not find recent enough log file, waiting... (newest is {newest.Name})");
+
                     await Task.Delay(750);
                 }
+
+                // disposed while still waiting
+                if (logFileInfo is null)
+                    return;
 
                 LogLocation = logFileInfo.FullName;
             }
@@ -224,9 +257,21 @@ namespace Bustrap.Integrations
                 string? log = await streamReader.ReadLineAsync();
 
                 if (log is null)
+                {
                     await Task.Delay(700);
-                else
+                    continue;
+                }
+
+                // One malformed line, or one subscriber throwing, shouldn't stop
+                // tracking for the rest of the session.
+                try
+                {
                     ReadLogEntry(log);
+                }
+                catch (Exception ex)
+                {
+                    App.Logger.WriteException($"{LOG_IDENT}::ReadLogEntry", ex);
+                }
             }
         }
 
@@ -486,6 +531,13 @@ namespace Bustrap.Integrations
         public void Dispose()
         {
             IsDisposed = true;
+
+            // The in-game resolution is otherwise only undone when Roblox writes
+            // a "leaving game" line. A crash, a kill from Task Manager or a lost
+            // connection never writes one, which left the desktop at the game
+            // resolution. Restoring is a no-op if nothing was applied.
+            RestoreOriginalResolution();
+
             GC.SuppressFinalize(this);
         }
     }
