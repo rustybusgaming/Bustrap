@@ -51,7 +51,7 @@ namespace Bustrap.Integrations
                 var process = Process.Start(new ProcessStartInfo
                 {
                     FileName = integration.Location,
-                    Arguments = integration.LaunchArgs.Replace("\r\n", " "),
+                    Arguments = (integration.LaunchArgs ?? "").Replace("\r\n", " "),
                     WorkingDirectory = Path.GetDirectoryName(integration.Location),
                     UseShellExecute = true
                 });
@@ -74,7 +74,7 @@ namespace Bustrap.Integrations
 
             try
             {
-                var process = Process.GetProcessById(pid);
+                using var process = Process.GetProcessById(pid);
                 process.Kill();
 
                 App.Logger.WriteLine(LOG_IDENT, $"Terminated integration process (PID {pid}).");
@@ -87,9 +87,13 @@ namespace Bustrap.Integrations
 
         public void Dispose()
         {
-            foreach (var pid in _activeIntegrations.Keys)
+            // Roblox has closed. Only close what the user asked to have closed:
+            // this used to kill every game-specific integration, including the
+            // ones with both auto-close options switched off.
+            foreach (var (pid, integration) in _activeIntegrations)
             {
-                TerminateProcess(pid);
+                if (integration.AutoClose || integration.AutoCloseOnGame)
+                    TerminateProcess(pid);
             }
 
             _activeIntegrations.Clear();

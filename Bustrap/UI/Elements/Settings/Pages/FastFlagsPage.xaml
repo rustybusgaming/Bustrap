@@ -443,7 +443,7 @@ Margin="8,0,8,0" />
                 <controls:OptionControl
                     Description="{x:Static resources:Strings.Menu_FastFlags_Presets_FixDisplayScaling_Description}"
                     Header="{x:Static resources:Strings.Menu_FastFlags_Presets_FixDisplayScaling_Title}"
-                    HelpLink="https://github.com/BloxstrapLabs/Bustrap/wiki/A-guide-to-FastFlags#dpi-scaling-fixes">
+                    HelpLink="https://github.com/bloxstraplabs/bloxstrap/wiki/A-guide-to-FastFlags#dpi-scaling-fixes">
                     <ui:ToggleSwitch IsChecked="{Binding FixDisplayScaling, Mode=TwoWay}" />
                 </controls:OptionControl>
 

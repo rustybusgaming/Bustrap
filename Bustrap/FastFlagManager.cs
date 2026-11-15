@@ -679,7 +679,9 @@ public static IReadOnlyDictionary<RefreshRate, string?> RefreshRates => new Dict
             {
                 if (Prop.ContainsKey(key))
                 {
-                    if (key == Prop[key].ToString())
+                    // compared the flag's NAME to its stored value, which never
+                    // matches, so unchanged flags were logged as changing
+                    if (value.ToString() == Prop[key]?.ToString())
                         return;
 
                     App.Logger.WriteLine(LOG_IDENT, $"Changing of '{key}' from '{Prop[key]}' to '{value}' is pending");
@@ -754,8 +756,10 @@ public static IReadOnlyDictionary<RefreshRate, string?> RefreshRates => new Dict
         {
             // convert all flag values to strings before saving
 
-            foreach (var pair in Prop)
-                Prop[pair.Key] = pair.Value.ToString()!;
+            // (a hand-edited file can hold a null value; ToString() on it threw
+            // and took the save down with it)
+            foreach (string key in Prop.Keys.ToList())
+                Prop[key] = Prop[key]?.ToString() ?? string.Empty;
 
             base.Save();
 

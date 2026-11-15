@@ -15,12 +15,25 @@ namespace Bustrap
 
         private const int MaxHistoryEntries = 150;
 
+        // WriteLine is called from every thread in the app - eight package
+        // downloads at once, the parallel settings loaders at startup - and
+        // List<T> is not safe for that. Unsynchronised Add/RemoveAt can corrupt
+        // the list or throw from inside whatever happened to be logging.
+        private readonly object _historyLock = new();
+
         public List<string> History { get; } = new();
         public bool Initialized { get; private set; }
         public bool NoWriteMode { get; private set; }
         public string? FileLocation { get; private set; }
 
-        public string AsDocument => string.Join('\n', History);
+        public string AsDocument
+        {
+            get
+            {
+                lock (_historyLock)
+                    return string.Join('\n', History);
+            }
+        }
 
         public void Initialize(bool useTempDir = false)
         {
@@ -47,8 +60,15 @@ namespace Bustrap
                 Initialized = true;
 
                 // Flush existing history to the file
-                if (History.Count > 0)
-                    _ = WriteToLogAsync(string.Join("\r\n", History));
+                string? backlog = null;
+                lock (_historyLock)
+                {
+                    if (History.Count > 0)
+                        backlog = string.Join("\r\n", History);
+                }
+
+                if (backlog is not null)
+                    _ = WriteToLogAsync(backlog);
 
                 WriteLine(LOG_IDENT, $"Logger initialized at {location}");
                 CleanupOldLogs(directory);
@@ -100,10 +120,14 @@ namespace Bustrap
             string output = $"{timestamp} {sanitizedMessage}";
 
             Debug.WriteLine(output);
-            History.Add(output);
 
-            if (History.Count > MaxHistoryEntries)
-                History.RemoveAt(0);
+            lock (_historyLock)
+            {
+                History.Add(output);
+
+                if (History.Count > MaxHistoryEntries)
+                    History.RemoveAt(0);
+            }
 
             _ = WriteToLogAsync(output);
         }
@@ -125,6 +149,16 @@ namespace Bustrap
             try
             {
                 await _semaphore.WaitAsync().ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Disposed during shutdown. Nothing was acquired, so nothing may
+                // be released - the old finally released regardless and threw.
+                return;
+            }
+
+            try
+            {
                 await _fileStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                 await _fileStream.FlushAsync().ConfigureAwait(false);
             }
@@ -132,9 +166,16 @@ namespace Bustrap
             {
                 // Stream might be disposed during shutdown
             }
+            catch (IOException)
+            {
+                // Disk full or the file went away. Logging is fire-and-forget;
+                // there is nobody to report this to and it must not take down
+                // the caller.
+            }
             finally
             {
-                _semaphore.Release();
+                try { _semaphore.Release(); }
+                catch (ObjectDisposedException) { }
             }
         }
 

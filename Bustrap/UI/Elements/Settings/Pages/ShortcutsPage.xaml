@@ -29,9 +29,9 @@
         <!-- Extract Icons Option -->
         <controls:OptionControl
             Margin="0,0,0,12"
-            Description="{Binding Source={x:Static resources:Strings.Menu_Shortcuts_ExtractIcons_Description}, Converter={StaticResource StringFormatConverter}, ConverterParameter='https://github.com/BloxstrapLabs/Bustrap/wiki/Using-Roblox-icons-for-your-shortcuts'}"
+            Description="{Binding Source={x:Static resources:Strings.Menu_Shortcuts_ExtractIcons_Description}, Converter={StaticResource StringFormatConverter}, ConverterParameter='https://github.com/bloxstraplabs/bloxstrap/wiki/Using-Roblox-icons-for-your-shortcuts'}"
             Header="{x:Static resources:Strings.Menu_Shortcuts_ExtractIcons_Title}"
-            HelpLink="https://github.com/BloxstrapLabs/Bustrap/wiki/Using-Roblox-icons-for-your-shortcuts">
+            HelpLink="https://github.com/bloxstraplabs/bloxstrap/wiki/Using-Roblox-icons-for-your-shortcuts">
             <ui:ToggleSwitch IsChecked="{Binding ExtractIconsTask.NewState, Mode=TwoWay}" />
         </controls:OptionControl>
 

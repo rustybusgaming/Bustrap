@@ -114,7 +114,6 @@ namespace Bustrap
         private double _taskbarProgressMaximum;
 
         private Process? _robloxProcess;
-        private DispatcherTimer? _memoryCleanerTimer;
         private CancellationTokenSource? _optimizationCts;
         private CancellationTokenSource? _cpuWatcherCts;
         private AsyncMutex? _mutex;
@@ -142,7 +141,26 @@ namespace Bustrap
         public IBootstrapperDialog? Dialog = null;
         public bool IsStudioLaunch => _launchMode != LaunchMode.Player;
         private bool _mustUpgrade => string.IsNullOrEmpty(AppData.State.VersionGuid)
-                                       || !File.Exists(AppData.ExecutablePath);
+                                       || !ClientExecutableExists();
+
+        /// <summary>
+        /// The player executable is renamed back and forth by the "rename to
+        /// eurotrucks2" option, and that rename only happens while applying
+        /// modifications. Checking for the configured name alone meant that
+        /// toggling the option made the client look uninstalled and forced a
+        /// full reinstall, so either name counts as installed.
+        /// </summary>
+        private bool ClientExecutableExists()
+        {
+            if (File.Exists(AppData.ExecutablePath))
+                return true;
+
+            if (IsStudioLaunch)
+                return false;
+
+            return File.Exists(Path.Combine(AppData.Directory, ProcRobloxExe))
+                || File.Exists(Path.Combine(AppData.Directory, ProcEuroTrucks));
+        }
 
         #endregion
 
@@ -261,13 +279,21 @@ namespace Bustrap
 
             if (!_noConnection)
             {
+                bool upToDate = true;
+
                 if (AppData.State.VersionGuid != _latestVersionGuid || _mustUpgrade)
-                    await UpgradeRoblox();
+                    upToDate = await UpgradeRoblox();
 
                 if (_cancelTokenSource.IsCancellationRequested) return;
 
-                await ApplyModifications();
-                ApplyLockDefaultIfNeeded(LOG_IDENT);
+                // A failed upgrade leaves _latestVersionDirectory half-extracted.
+                // Copying mods into it would only dress up a broken install, so
+                // fall through and launch whatever client is still on disk.
+                if (upToDate)
+                {
+                    await ApplyModifications();
+                    ApplyLockDefaultIfNeeded(LOG_IDENT);
+                }
             }
 
             if (IsStudioLaunch) WindowsRegistry.RegisterStudio();
@@ -275,7 +301,15 @@ namespace Bustrap
 
             await mutex.ReleaseAsync();
 
-            if (!App.LaunchSettings.NoLaunchFlag.Active && !_cancelTokenSource.IsCancellationRequested)
+            // Whatever left us without a client (a failed first install, no
+            // connection) has already been reported. Trying to start an
+            // executable that is not there only stacked a second, vaguer error
+            // dialog on top of the real one.
+            bool clientPresent = ClientExecutableExists();
+            if (!clientPresent)
+                App.Logger.WriteLine(LOG_IDENT, "No Roblox client is installed, nothing to launch.");
+
+            if (clientPresent && !App.LaunchSettings.NoLaunchFlag.Active && !_cancelTokenSource.IsCancellationRequested)
                 await StartRoblox();
 
             Dialog?.CloseBootstrapper();
@@ -321,11 +355,26 @@ namespace Bustrap
         {
             try
             {
-                Process.Start(new ProcessStartInfo
+                var startInfo = new ProcessStartInfo
                 {
                     FileName = Environment.ProcessPath!,
-                    UseShellExecute = true
-                });
+                    UseShellExecute = false
+                };
+
+                // Relaunch with what we were launched with. Restarting bare
+                // dropped the roblox-player: link, so clicking Play on the
+                // website during an update opened the menu instead of the game.
+                foreach (string arg in App.LaunchSettings.Args)
+                    startInfo.ArgumentList.Add(arg);
+
+                // -upgrade makes the relaunched copy skip the update check. Now
+                // that it comes back through the bootstrapper, a release whose
+                // tag and binary version disagree would otherwise update,
+                // restart and update again forever.
+                if (!App.LaunchSettings.UpgradeFlag.Active)
+                    startInfo.ArgumentList.Add("-upgrade");
+
+                Process.Start(startInfo);
                 Environment.Exit(0);
             }
             catch (Exception ex)
@@ -351,14 +400,11 @@ namespace Bustrap
                 return;
             }
 
-            if (exception is HttpRequestException httpEx &&
-                httpEx.StatusCode == HttpStatusCode.Forbidden)
-            {
-                App.Logger.WriteLine(LOG_IDENT, "403 Forbidden — switching to default channel.");
-                Deployment.Channel = Deployment.DefaultChannel;
-                return;
-            }
-
+            // This used to return early on a 403 after resetting the channel,
+            // leaving _noConnection false with no version resolved - the caller
+            // then tried to install into a null directory. Channel fallback is
+            // handled inside GetLatestVersionInfo; anything that still reaches
+            // here means there is no version to work with.
             _noConnection = true;
             Frontend.ShowMessageBox(
                 "A network or server issue occurred. Try switching your channel in Settings or relaunching.",
@@ -435,43 +481,61 @@ namespace Bustrap
         {
             const string LOG_IDENT = "Bootstrapper::GetLatestVersionInfo";
 
-            ClientVersion? clientVersion = null;
-            var infoUrl = Deployment.GetInfoUrl(Deployment.Channel);
-
-            using (var response = await App.HttpClient.GetAsync(
-                infoUrl, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+            if (!App.Settings.Prop.UpdateRoblox && !_mustUpgrade)
             {
-                if (!response.IsSuccessStatusCode)
-                {
-                    App.Logger.WriteLine(LOG_IDENT, $"HTTP {(int)response.StatusCode}");
+                // Updates are turned off and a client is installed, so the
+                // installed version IS the target. Resolving the newest version
+                // here pointed everything downstream at a folder that was never
+                // installed: mods and fast flags were copied there, and the
+                // client that actually launched never saw them.
+                App.Logger.WriteLine(LOG_IDENT, "Roblox updates are disabled, staying on the installed version.");
+                _latestVersionGuid = AppData.State.VersionGuid;
+            }
+            else
+            {
+                ClientVersion? clientVersion = null;
+                var infoUrl = Deployment.GetInfoUrl(Deployment.Channel);
 
-                    if (response.StatusCode == HttpStatusCode.Forbidden)
+                using (var response = await App.HttpClient.GetAsync(
+                    infoUrl, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+                {
+                    if (!response.IsSuccessStatusCode)
                     {
-                        App.Logger.WriteLine(LOG_IDENT, "403 — switching to default channel.");
-                        Deployment.Channel = Deployment.DefaultChannel;
-                        clientVersion = await Deployment.GetInfo(Deployment.Channel).ConfigureAwait(false);
+                        App.Logger.WriteLine(LOG_IDENT, $"HTTP {(int)response.StatusCode}");
+
+                        // 401 and 404 mean the channel is private or gone just
+                        // as much as 403 does; all three fall back to production
+                        // instead of being reported as a network failure.
+                        if (!Deployment.IsDefaultChannel && Deployment.BadChannelCodes.Contains(response.StatusCode))
+                        {
+                            App.Logger.WriteLine(LOG_IDENT, $"Channel {Deployment.Channel} is unavailable, switching to the default channel.");
+                            Deployment.Channel = Deployment.DefaultChannel;
+                            clientVersion = await Deployment.GetInfo(Deployment.Channel).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            throw new HttpRequestException(
+                                $"Bad status: {response.StatusCode}", null, response.StatusCode);
+                        }
                     }
                     else
                     {
-                        throw new HttpRequestException($"Bad status: {response.StatusCode}");
+                        var mediaType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
+                        if (!mediaType.Contains("application/json", StringComparison.OrdinalIgnoreCase))
+                            throw new Exception("Invalid response content-type from version endpoint.");
+
+                        var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        clientVersion = JsonSerializer.Deserialize<ClientVersion>(json)
+                            ?? throw new Exception("ClientVersion JSON deserialized to null.");
                     }
                 }
-                else
-                {
-                    var mediaType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
-                    if (!mediaType.Contains("application/json", StringComparison.OrdinalIgnoreCase))
-                        throw new Exception("Invalid response content-type from version endpoint.");
 
-                    var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    clientVersion = JsonSerializer.Deserialize<ClientVersion>(json)
-                        ?? throw new Exception("ClientVersion JSON deserialized to null.");
-                }
+                if (string.IsNullOrWhiteSpace(clientVersion?.VersionGuid))
+                    throw new Exception("VersionGuid missing from clientVersion response.");
+
+                _latestVersionGuid = clientVersion.VersionGuid;
             }
 
-            if (string.IsNullOrWhiteSpace(clientVersion?.VersionGuid))
-                throw new Exception("VersionGuid missing from clientVersion response.");
-
-            _latestVersionGuid = clientVersion.VersionGuid;
             _latestVersionDirectory = Path.Combine(Paths.Versions, _latestVersionGuid);
 
             string manifestUrl = $"https://setup.rbxcdn.com/{_latestVersionGuid}-rbxPkgManifest.txt";
@@ -540,9 +604,9 @@ namespace Bustrap
 
                 if (IsStudioLaunch) return;
 
-                await LaunchCustomIntegrations(LOG_IDENT);
+                var autoclosePids = LaunchCustomIntegrations(LOG_IDENT);
                 await DisableCrashHandlerIfNeeded(LOG_IDENT, ct);
-                await LaunchWatcherIfNeeded(logFileName, ct);
+                LaunchWatcherIfNeeded(logFileName, autoclosePids);
 
                 await Task.Delay(2500, ct).ConfigureAwait(false);
 
@@ -556,10 +620,6 @@ namespace Bustrap
             {
                 App.Logger.WriteLine(LOG_IDENT, $"Unexpected error in StartRoblox: {ex}");
                 Frontend.ShowPlayerErrorDialog();
-            }
-            finally
-            {
-                StopMemoryAndProcessOptimizer();
             }
         }
 
@@ -656,7 +716,6 @@ namespace Bustrap
                 }
 
                 StartCpuLimitWatcherIfNeeded();
-                RestartMemoryCleanerFromSettings();
                 StartOptimizerIfNeeded();
 
                 if (App.Settings.Prop?.MultiAccount == true)
@@ -688,7 +747,12 @@ namespace Bustrap
             return logFileName;
         }
 
-        private async Task LaunchCustomIntegrations(string logIdent)
+        /// <returns>
+        /// PIDs of the integrations that asked to be closed along with Roblox.
+        /// These have to reach the watcher: this process exits a few seconds
+        /// after launch, so it cannot do the closing itself.
+        /// </returns>
+        private List<int> LaunchCustomIntegrations(string logIdent)
         {
             var autoclosePids = new List<int>();
             foreach (var integration in (App.Settings.Prop?.CustomIntegrations ?? Enumerable.Empty<CustomIntegration>())
@@ -719,6 +783,8 @@ namespace Bustrap
                     App.Logger.WriteLine(logIdent, $"Failed to launch '{integration.Name}': {ex.Message}");
                 }
             }
+
+            return autoclosePids;
         }
 
         private async Task DisableCrashHandlerIfNeeded(string logIdent, CancellationToken ct)
@@ -745,10 +811,16 @@ namespace Bustrap
             }
         }
 
-        private async Task LaunchWatcherIfNeeded(string logFileName, CancellationToken ct)
+        private void LaunchWatcherIfNeeded(string logFileName, List<int> autoclosePids)
         {
+            // The watcher is the only part of Bustrap that stays alive for the
+            // whole Roblox session, so anything that has to act later - closing
+            // integrations when Roblox exits, cleaning memory on an interval -
+            // needs it running, whether or not activity tracking is on.
             bool needWatcher = (App.Settings?.Prop.EnableActivityTracking ?? false)
-                || App.LaunchSettings.TestModeFlag?.Active == true;
+                || App.LaunchSettings.TestModeFlag?.Active == true
+                || autoclosePids.Count > 0
+                || BustrapRobloxSettingsManager.Load().MemoryCleanerIntervalSeconds > 0;
 
             if (!needWatcher) return;
 
@@ -758,7 +830,7 @@ namespace Bustrap
             {
                 ProcessId = _appPid,
                 LogFile = logFileName,
-                AutoclosePids = new List<int>()
+                AutoclosePids = autoclosePids
             };
 
             string b64 = Convert.ToBase64String(
@@ -859,44 +931,6 @@ namespace Bustrap
 
         #region Memory / Process Optimization
 
-        private void RestartMemoryCleanerFromSettings()
-        {
-            _memoryCleanerTimer?.Stop();
-            _memoryCleanerTimer = null;
-
-            var settings = BustrapRobloxSettingsManager.Load();
-            int seconds = settings.MemoryCleanerIntervalSeconds;
-
-            if (seconds <= 0)
-            {
-                App.Logger.WriteLine("MemoryCleaner", "Memory cleaner disabled.");
-                return;
-            }
-
-            _memoryCleanerTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
-            _memoryCleanerTimer.Tick += (_, __) =>
-            {
-                try
-                {
-                    RobloxMemoryCleaner.CleanAllRobloxMemory();
-                    App.Logger.WriteLine("MemoryCleaner", $"Memory cleaned at {DateTime.Now:T}");
-                }
-                catch (Exception ex)
-                {
-                    App.Logger.WriteLine("MemoryCleaner", $"Error: {ex.Message}");
-                }
-            };
-
-            _memoryCleanerTimer.Start();
-            App.Logger.WriteLine("MemoryCleaner", $"Started with interval {seconds}s");
-        }
-
-        private void StopMemoryAndProcessOptimizer()
-        {
-            _memoryCleanerTimer?.Stop();
-            _memoryCleanerTimer = null;
-        }
-
         private void StartOptimizerIfNeeded()
         {
             if (App.Settings.Prop?.OptimizeRoblox != true &&
@@ -986,7 +1020,7 @@ namespace Bustrap
             }
 
             int cores = Environment.ProcessorCount;
-            long affinityMask = cores >= 64 ? -1L : (1L << cores) - 1;
+            long affinityMask = CpuCoreLimiter.AffinityMask(cores);
 
             Safe(() => process.ProcessorAffinity = (IntPtr)affinityMask, "set CPU affinity");
 
@@ -1068,7 +1102,7 @@ namespace Bustrap
                         {
                             int total = Environment.ProcessorCount;
                             coreCount = Math.Clamp(coreCount, 1, total);
-                            long mask = (1L << coreCount) - 1;
+                            long mask = CpuCoreLimiter.AffinityMask(coreCount);
 
                             foreach (var proc in Process.GetProcessesByName(ProcRobloxPlayer))
                             {
@@ -1282,7 +1316,7 @@ namespace Bustrap
             {
                 ct.ThrowIfCancellationRequested();
                 try { await action().ConfigureAwait(false); return; }
-                catch (Exception ex) when (isTransient(ex) && attempt < maxAttempts)
+                catch (Exception ex) when (!ct.IsCancellationRequested && isTransient(ex) && attempt < maxAttempts)
                 {
                     int delay = baseDelayMs * (1 << (attempt - 1));
                     int jitter = (int)(delay * (0.15 * (rng.NextDouble() * 2 - 1)));
@@ -1318,7 +1352,12 @@ namespace Bustrap
                 ct: ct).ConfigureAwait(false);
         }
 
-        private async Task UpgradeRoblox()
+        /// <returns>
+        /// True when the client in <see cref="_latestVersionDirectory"/> is
+        /// complete and ready for modifications; false when the upgrade was
+        /// refused, cancelled or failed.
+        /// </returns>
+        private async Task<bool> UpgradeRoblox()
         {
             const string LOG_IDENT = "Bootstrapper::UpgradeRoblox";
             var ct = _cancelTokenSource.Token;
@@ -1326,7 +1365,7 @@ namespace Bustrap
             if (Interlocked.Exchange(ref _isInstalling, 1) == 1)
             {
                 App.Logger.WriteLine(LOG_IDENT, "Upgrade already in progress — skipping.");
-                return;
+                return false;
             }
 
             try
@@ -1336,11 +1375,13 @@ namespace Bustrap
                     SetStatus(Strings.Bootstrapper_Status_CancelUpgrade);
                     await Task.Delay(250, ct).ConfigureAwait(false);
 
-                    if (!Directory.Exists(_latestVersionDirectory))
-                        Frontend.ShowMessageBox(
-                            Strings.Bootstrapper_Dialog_NoUpgradeWithoutClient,
-                            MessageBoxImage.Warning, MessageBoxButton.OK);
-                    return;
+                    // only reachable with no client installed: when one is,
+                    // GetLatestVersionInfo pins the installed version and no
+                    // upgrade is attempted at all
+                    Frontend.ShowMessageBox(
+                        Strings.Bootstrapper_Dialog_NoUpgradeWithoutClient,
+                        MessageBoxImage.Warning, MessageBoxButton.OK);
+                    return false;
                 }
 
                 SetStatus(string.IsNullOrEmpty(AppData.State.VersionGuid)
@@ -1369,11 +1410,20 @@ namespace Bustrap
                 long totalPacked = _versionPackageManifest.Sum(p => (long)p.PackedSize);
                 long totalUnpacked = _versionPackageManifest.Sum(p => (long)p.Size);
 
-                if (Filesystem.GetFreeDiskSpace(Paths.Base) < (long)((totalPacked + totalUnpacked) * 1.1))
+                // Packages are cached under Base, the client is extracted under
+                // Versions. A negative result means the drive could not be
+                // identified (a UNC path, say) - that is "unknown", not "full",
+                // and used to block the install with a bogus out-of-space error.
+                long required = (long)((totalPacked + totalUnpacked) * 1.1);
+                long free = Filesystem.GetFreeDiskSpace(Paths.Versions);
+                if (free < 0)
+                    free = Filesystem.GetFreeDiskSpace(Paths.Base);
+
+                if (free >= 0 && free < required)
                 {
                     Frontend.ShowMessageBox(Strings.Bootstrapper_NotEnoughSpace, MessageBoxImage.Error);
                     App.Terminate(ErrorCode.ERROR_INSTALL_FAILURE);
-                    return;
+                    return false;
                 }
 
                 if (Dialog is not null)
@@ -1389,57 +1439,97 @@ namespace Bustrap
 
                 int totalPackages = _versionPackageManifest.Count;
                 int packagesComplete = 0;
-                int failedPackages = 0;
-                long bytesDownloaded = 0;
+                Exception? firstFailure = null;
+                string? failedPackage = null;
                 var sw = Stopwatch.StartNew();
+
+                Interlocked.Exchange(ref _totalDownloadedBytes, 0);
+
+                // One failed package has to stop the others, but that is not the
+                // user cancelling. Cancelling the bootstrapper's own token for it
+                // made the failure surface as "The operation was canceled" and
+                // then exit without a word; a linked source keeps the two apart.
+                using var batchCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var batchToken = batchCts.Token;
 
                 using var throttler = new SemaphoreSlim(8);
 
                 var tasks = _versionPackageManifest.Select(async package =>
                 {
-                    await throttler.WaitAsync(ct).ConfigureAwait(false);
+                    try { await throttler.WaitAsync(batchToken).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { return; }
+
                     try
                     {
-                        await WithRetryAsync(
-                            () => DownloadPackage(package),
-                            $"{LOG_IDENT}::Download({package.Name})",
-                            maxAttempts: 4, baseDelayMs: 800, ct: ct).ConfigureAwait(false);
-
-                        Interlocked.Add(ref bytesDownloaded, package.PackedSize);
-                        int done = Interlocked.Increment(ref packagesComplete);
-
-                        double elapsed = Math.Max(0.5, sw.Elapsed.TotalSeconds);
-                        double speed = bytesDownloaded / elapsed;
-                        double remaining = (totalPacked - bytesDownloaded) / Math.Max(speed, 1);
-                        string eta = TimeSpan.FromSeconds(remaining).ToString(@"hh\:mm\:ss");
-
-                        SetStatus($"Downloading packages... ({done}/{totalPackages}) | ETA: {eta}");
-                        Interlocked.Exchange(ref _totalDownloadedBytes, bytesDownloaded);
-                        UpdateProgressBar();
+                        // DownloadPackage retries on its own
+                        await DownloadPackage(package, batchToken).ConfigureAwait(false);
 
                         await WithRetryAsync(
                             () => { ExtractPackage(package); return Task.CompletedTask; },
                             $"{LOG_IDENT}::Extract({package.Name})",
                             maxAttempts: 4, baseDelayMs: 800,
                             isTransient: ex => ex is IOException or UnauthorizedAccessException,
-                            ct: ct).ConfigureAwait(false);
+                            ct: batchToken).ConfigureAwait(false);
+
+                        Interlocked.Increment(ref packagesComplete);
                     }
-                    catch (TaskCanceledException) { throw; }
+                    catch (OperationCanceledException) when (batchToken.IsCancellationRequested) { }
                     catch (Exception ex)
                     {
-                        Interlocked.Increment(ref failedPackages);
+                        if (Interlocked.CompareExchange(ref firstFailure, ex, null) is null)
+                            failedPackage = package.Name;
+
                         App.Logger.WriteLine(LOG_IDENT, $"Package {package.Name} failed: {ex}");
-                        _cancelTokenSource.Cancel();
+                        batchCts.Cancel();
                     }
                     finally { throttler.Release(); }
                 }).ToList();
 
-                await Task.WhenAll(tasks).ConfigureAwait(false);
-                sw.Stop();
+                // Progress is driven from here rather than from each download, so
+                // the bar and the ETA advance while packages are in flight
+                // instead of jumping once per finished package.
+                using var progressCts = new CancellationTokenSource();
+                var progressTask = Task.Run(async () =>
+                {
+                    while (!progressCts.IsCancellationRequested)
+                    {
+                        try
+                        {
+                            long bytes = Interlocked.Read(ref _totalDownloadedBytes);
+                            double speed = bytes / Math.Max(0.5, sw.Elapsed.TotalSeconds);
+                            double remaining = Math.Clamp((totalPacked - bytes) / Math.Max(speed, 1), 0, 359_999);
+                            string eta = TimeSpan.FromSeconds(remaining).ToString(@"hh\:mm\:ss");
 
-                if (ct.IsCancellationRequested) return;
-                if (failedPackages > 0)
-                    throw new Exception($"{failedPackages} package(s) failed during upgrade.");
+                            SetStatus($"Downloading packages... ({Volatile.Read(ref packagesComplete)}/{totalPackages}) | ETA: {eta}");
+                            UpdateProgressBar();
+
+                            await Task.Delay(250, progressCts.Token).ConfigureAwait(false);
+                        }
+                        catch (Exception)
+                        {
+                            // cancelled, or the dialog is already closing -
+                            // either way there is nothing left to report to
+                            break;
+                        }
+                    }
+                });
+
+                try
+                {
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                }
+                finally
+                {
+                    progressCts.Cancel();
+                    await progressTask.ConfigureAwait(false);
+                    sw.Stop();
+                }
+
+                if (ct.IsCancellationRequested) return false;
+                if (firstFailure is not null)
+                    throw new Exception($"Package {failedPackage} failed: {firstFailure.Message}", firstFailure);
+
+                UpdateProgressBar();
 
                 if (Dialog is not null)
                 {
@@ -1484,10 +1574,12 @@ namespace Bustrap
 
                 try
                 {
-                    if (!int.TryParse(App.Settings.Prop.BufferSizeKbte, out int bufKbte) || bufKbte <= 0)
-                        bufKbte = 1024;
-
-                    int distSize = _versionPackageManifest.Sum(x => x.Size + x.PackedSize) / bufKbte;
+                    // EstimatedSize is in kilobytes. This used to divide by the
+                    // download buffer-size setting, so changing that setting
+                    // changed the size Windows reports for Bustrap, and the int
+                    // sum overflowed (and threw) once a Studio install passed 2 GB.
+                    int distSize = (int)Math.Min(int.MaxValue,
+                        _versionPackageManifest.Sum(x => (long)x.Size + x.PackedSize) / 1024);
                     AppData.State.Size = distSize;
 
                     int totalSize = (App.State.Prop.Player?.Size ?? 0) + (App.State.Prop.Studio?.Size ?? 0);
@@ -1498,10 +1590,15 @@ namespace Bustrap
                 { App.Logger.WriteLine(LOG_IDENT, $"Register size failed: {ex.Message}"); }
 
                 App.State.Save();
+                return true;
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
+                // TaskCanceledException alone missed the plain
+                // OperationCanceledException that most cancellation paths throw,
+                // so cancelling could pop an "upgrade failed" error box
                 App.Logger.WriteLine(LOG_IDENT, "Upgrade cancelled.");
+                return false;
             }
             catch (Exception ex)
             {
@@ -1509,6 +1606,7 @@ namespace Bustrap
                 Frontend.ShowMessageBox(
                     $"{Strings.Bootstrapper_Status_Upgrading} failed:\n{ex.Message}",
                     MessageBoxImage.Error);
+                return false;
             }
             finally
             {
@@ -1520,13 +1618,11 @@ namespace Bustrap
 
         #region Download
 
-        private async Task DownloadPackage(Package package)
+        private async Task DownloadPackage(Package package, CancellationToken ct)
         {
             string LOG_IDENT = $"Bootstrapper::DownloadPackage.{package.Name}";
-            bool updating = !string.IsNullOrEmpty(AppData.State.VersionGuid);
-            var ct = _cancelTokenSource.Token;
 
-            if (ct.IsCancellationRequested) return;
+            ct.ThrowIfCancellationRequested();
 
             Directory.CreateDirectory(Paths.Downloads);
 
@@ -1539,11 +1635,10 @@ namespace Bustrap
 
             if (File.Exists(package.DownloadPath))
             {
-                if (MD5Hash.FromFile(package.DownloadPath) == package.Signature)
+                if (HashMatches(package.DownloadPath, package.Signature))
                 {
                     App.Logger.WriteLine(LOG_IDENT, "Already downloaded — skipping.");
                     Interlocked.Add(ref _totalDownloadedBytes, package.PackedSize);
-                    UpdateProgressBar();
                     return;
                 }
                 File.Delete(package.DownloadPath);
@@ -1552,10 +1647,18 @@ namespace Bustrap
             {
                 try
                 {
-                    File.Copy(robloxCache, package.DownloadPath, true);
-                    Interlocked.Add(ref _totalDownloadedBytes, package.PackedSize);
-                    UpdateProgressBar();
-                    return;
+                    // Roblox's own cache is outside our control, so it gets the
+                    // same checksum as a download. It used to be trusted blindly,
+                    // and a stale or truncated file there failed the whole
+                    // upgrade at extraction with no way to recover.
+                    if (HashMatches(robloxCache, package.Signature))
+                    {
+                        File.Copy(robloxCache, package.DownloadPath, true);
+                        Interlocked.Add(ref _totalDownloadedBytes, package.PackedSize);
+                        return;
+                    }
+
+                    App.Logger.WriteLine(LOG_IDENT, "Roblox cache entry failed its checksum, downloading instead.");
                 }
                 catch (Exception ex)
                 {
@@ -1564,6 +1667,7 @@ namespace Bustrap
             }
 
             const int MaxRetries = 10;
+            const int MaxChecksumFailures = 3;
             const int MaxParallelSegments = 4;
             const int BufferSize = 1024 * 1024;
             const long MinMultiPartSize = BufferSize * 4L;
@@ -1571,9 +1675,28 @@ namespace Bustrap
             string tempFile = package.DownloadPath + ".part";
             if (File.Exists(tempFile)) File.Delete(tempFile);
 
+            // Bytes this package has added to the shared progress total. Every
+            // chunk is counted as it arrives and a failed attempt takes its
+            // share back out, so the bar neither double counts nor runs
+            // backwards. (Multi-part downloads used to be counted once per chunk
+            // and then again in full on completion.)
+            long reported = 0;
+            void Report(long bytes)
+            {
+                Interlocked.Add(ref reported, bytes);
+                Interlocked.Add(ref _totalDownloadedBytes, bytes);
+            }
+            void Unreport() =>
+                Interlocked.Add(ref _totalDownloadedBytes, -Interlocked.Exchange(ref reported, 0));
+
+            bool allowMultipart = true;
+            int checksumFailures = 0;
+
             for (int attempt = 1; attempt <= MaxRetries; attempt++)
             {
-                if (ct.IsCancellationRequested) return;
+                ct.ThrowIfCancellationRequested();
+
+                bool usedMultipart = false;
 
                 try
                 {
@@ -1592,21 +1715,23 @@ namespace Bustrap
 
                     var contentLength = response.Content.Headers.ContentLength;
                     bool supportsRanges =
+                        allowMultipart &&
                         contentLength.HasValue &&
                         contentLength.Value >= MinMultiPartSize &&
                         response.Headers.AcceptRanges?.Contains("bytes") == true;
 
                     if (supportsRanges)
                     {
+                        usedMultipart = true;
                         response.Dispose();
                         await DownloadMultipartAsync(
                             packageUrl, tempFile, contentLength!.Value,
-                            BufferSize, MaxParallelSegments, updating, LOG_IDENT, ct);
+                            BufferSize, MaxParallelSegments, Report, LOG_IDENT, ct);
                     }
                     else
                     {
                         await DownloadSingleThreadAsync(
-                            response, tempFile, BufferSize, updating, LOG_IDENT, ct);
+                            response, tempFile, BufferSize, Report, LOG_IDENT, ct);
                     }
 
                     string hash = MD5Hash.FromFile(tempFile);
@@ -1615,34 +1740,70 @@ namespace Bustrap
                             $"Checksum mismatch for {package.Name}: expected {package.Signature}, got {hash}");
 
                     File.Move(tempFile, package.DownloadPath, true);
-                    Interlocked.Add(ref _totalDownloadedBytes, package.PackedSize);
-                    if (updating) UpdateProgressBar();
+
+                    // settle on the manifest's size so the total lands exactly on 100%
+                    Report(package.PackedSize - Interlocked.Read(ref reported));
                     return;
                 }
-                catch (ChecksumFailedException ex)
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
-                    if (File.Exists(tempFile)) File.Delete(tempFile);
+                    // Only our own cancellation ends the download. An HttpClient
+                    // timeout is also a TaskCanceledException, and it used to be
+                    // swallowed here as if the package had downloaded - the
+                    // missing file then blew up at extraction.
+                    Unreport();
+                    TryDelete(tempFile);
+                    throw;
+                }
+                catch (ChecksumFailedException ex) when (++checksumFailures >= MaxChecksumFailures)
+                {
+                    Unreport();
+                    TryDelete(tempFile);
+                    // The string's placeholder is {0}; this used to Replace("[link]"),
+                    // which matched nothing and left a literal "{0}" in the dialog.
+                    const string helpUrl = "https://github.com/bloxstraplabs/bloxstrap/wiki/Bloxstrap-is-unable-to-download-Roblox";
                     Frontend.ShowConnectivityDialog(
                         Strings.Dialog_Connectivity_UnableToDownload,
-                        Strings.Dialog_Connectivity_UnableToDownloadReason
-                            .Replace("[link]", "https://github.com/BloxstrapLabs/Bustrap/wiki/Bustrap-is-unable-to-download-Roblox"),
+                        string.Format(Strings.Dialog_Connectivity_UnableToDownloadReason, $"[{helpUrl}]({helpUrl})"),
                         MessageBoxImage.Error, ex);
                     App.Terminate(ErrorCode.ERROR_CANCELLED);
-                    return;
-                }
-                catch (TaskCanceledException)
-                {
-                    if (File.Exists(tempFile)) File.Delete(tempFile);
                     return;
                 }
                 catch (Exception ex)
                 {
                     if (ex is AggregateException agg) ex = agg.Flatten().InnerException ?? agg;
                     App.Logger.WriteLine(LOG_IDENT, $"Attempt {attempt}/{MaxRetries}: {ex.Message}");
-                    if (File.Exists(tempFile)) File.Delete(tempFile);
+
+                    Unreport();
+                    TryDelete(tempFile);
+
+                    // a range download that failed or came back corrupt is
+                    // retried as one plain request, in case something between us
+                    // and the CDN mishandles ranges
+                    if (usedMultipart)
+                        allowMultipart = false;
+
                     if (attempt == MaxRetries) throw;
                     await Task.Delay(Math.Min(2000 * attempt, 10_000), ct);
                 }
+            }
+
+            // every attempt was spent on 403 redirects
+            throw new HttpRequestException($"Unable to download {package.Name}: access was denied on every mirror.");
+        }
+
+        private static bool HashMatches(string path, string signature) =>
+            MD5Hash.FromFile(path).Equals(signature, StringComparison.OrdinalIgnoreCase);
+
+        private static void TryDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+            catch (Exception ex)
+            {
+                App.Logger.WriteLine("Bootstrapper::TryDelete", $"Could not delete {path}: {ex.Message}");
             }
         }
 
@@ -1650,7 +1811,7 @@ namespace Bustrap
             HttpResponseMessage response,
             string tempFile,
             int bufferSize,
-            bool updating,
+            Action<long> report,
             string logIdent,
             CancellationToken token)
         {
@@ -1661,7 +1822,6 @@ namespace Bustrap
 
             byte[] buf = ArrayPool<byte>.Shared.Rent(bufferSize);
             long total = 0;
-            var sw = Stopwatch.StartNew();
 
             try
             {
@@ -1670,35 +1830,25 @@ namespace Bustrap
                 {
                     await file.WriteAsync(buf.AsMemory(0, read), token);
                     total += read;
-
-                    if (updating && sw.ElapsedMilliseconds >= 400)
-                        sw.Restart();
+                    report(read);
                 }
                 App.Logger.WriteLine(logIdent, $"Downloaded {total:N0} bytes (single-thread)");
             }
             finally { ArrayPool<byte>.Shared.Return(buf); }
         }
 
-        private async Task DownloadMultipartAsync(
+        private static async Task DownloadMultipartAsync(
             string url,
             string tempFile,
             long contentLength,
             int bufferSize,
             int maxSegments,
-            bool updating,
+            Action<long> report,
             string logIdent,
             CancellationToken token)
         {
             const long MinSegment = 2L * 1024 * 1024;
-            int segs = (int)Math.Min(maxSegments, Math.Max(1, contentLength / MinSegment));
-
-            if (segs <= 1)
-            {
-                using var fb = new HttpClient();
-                using var r = await fb.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
-                await DownloadSingleThreadAsync(r, tempFile, bufferSize, updating, logIdent, token);
-                return;
-            }
+            int segs = (int)Math.Clamp(contentLength / MinSegment, 1, maxSegments);
 
             long segSize = contentLength / segs;
             App.Logger.WriteLine(logIdent,
@@ -1712,19 +1862,9 @@ namespace Bustrap
             var fileLock = new object();
             long totalRead = 0;
 
-            using var progressCts = CancellationTokenSource.CreateLinkedTokenSource(token);
-
-            Task progressTask = updating
-                ? Task.Run(async () =>
-                {
-                    var sw = Stopwatch.StartNew();
-                    while (!progressCts.Token.IsCancellationRequested)
-                    {
-                        if (sw.ElapsedMilliseconds >= 400) { UpdateProgressBar(); sw.Restart(); }
-                        try { await Task.Delay(100, progressCts.Token); } catch { break; }
-                    }
-                }, progressCts.Token)
-                : Task.CompletedTask;
+            // if one segment fails there is no point finishing the others
+            using var segmentCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            var segmentToken = segmentCts.Token;
 
             var tasks = Enumerable.Range(0, segs).Select(i =>
             {
@@ -1733,51 +1873,76 @@ namespace Bustrap
 
                 return Task.Run(async () =>
                 {
-                    var req = new HttpRequestMessage(HttpMethod.Get, url)
-                    {
-                        Headers = { Range = new RangeHeaderValue(start, end) }
-                    };
-
-                    using var res = await App.HttpClient.SendAsync(
-                        req, HttpCompletionOption.ResponseHeadersRead, token);
-                    res.EnsureSuccessStatusCode();
-
-                    await using var net = await res.Content.ReadAsStreamAsync(token);
-                    byte[] buf = ArrayPool<byte>.Shared.Rent(bufferSize);
-                    long pos = start;
-
                     try
                     {
-                        int read;
-                        while ((read = await net.ReadAsync(buf.AsMemory(0, bufferSize), token)) > 0)
+                        using var req = new HttpRequestMessage(HttpMethod.Get, url)
                         {
-                            lock (fileLock)
+                            Headers = { Range = new RangeHeaderValue(start, end) }
+                        };
+
+                        using var res = await App.HttpClient.SendAsync(
+                            req, HttpCompletionOption.ResponseHeadersRead, segmentToken);
+                        res.EnsureSuccessStatusCode();
+
+                        // A server or proxy that ignores Range answers 200 with
+                        // the whole file. Writing that at this segment's offset
+                        // would silently corrupt the package.
+                        if (res.StatusCode != HttpStatusCode.PartialContent)
+                            throw new HttpRequestException(
+                                $"Range request was answered with {(int)res.StatusCode} instead of 206.");
+
+                        await using var net = await res.Content.ReadAsStreamAsync(segmentToken);
+                        byte[] buf = ArrayPool<byte>.Shared.Rent(bufferSize);
+                        long pos = start;
+
+                        try
+                        {
+                            int read;
+                            while ((read = await net.ReadAsync(buf.AsMemory(0, bufferSize), segmentToken)) > 0)
                             {
-                                fs.Position = pos;
-                                fs.Write(buf, 0, read);
+                                if (pos + read > end + 1)
+                                    throw new HttpRequestException("Range response was longer than the range requested.");
+
+                                lock (fileLock)
+                                {
+                                    fs.Position = pos;
+                                    fs.Write(buf, 0, read);
+                                }
+                                pos += read;
+                                Interlocked.Add(ref totalRead, read);
+                                report(read);
                             }
-                            pos += read;
-                            Interlocked.Add(ref totalRead, read);
-                            Interlocked.Add(ref _totalDownloadedBytes, read);
                         }
+                        finally { ArrayPool<byte>.Shared.Return(buf); }
                     }
-                    finally { ArrayPool<byte>.Shared.Return(buf); }
-                }, token);
+                    catch
+                    {
+                        segmentCts.Cancel();
+                        throw;
+                    }
+                }, segmentToken);
             }).ToList();
 
             try
             {
                 await Task.WhenAll(tasks);
-                await fs.FlushAsync(token);
             }
-            finally
+            catch (OperationCanceledException) when (!token.IsCancellationRequested)
             {
-                progressCts.Cancel();
-                try { await progressTask; } catch (Exception ex)
-                {
-                    App.Logger.WriteException("Bootstrapper::DownloadMultipartAsync", ex);
-                }
+                // WhenAll can surface a sibling's cancellation rather than the
+                // segment that actually failed; report the real cause
+                var failure = tasks
+                    .Where(t => t.IsFaulted)
+                    .Select(t => t.Exception!.GetBaseException())
+                    .FirstOrDefault();
+
+                if (failure is not null)
+                    throw new HttpRequestException($"Multi-part download failed: {failure.Message}", failure);
+
+                throw;
             }
+
+            await fs.FlushAsync(token);
 
             App.Logger.WriteLine(logIdent, $"Downloaded {totalRead:N0} bytes (multi-part)");
         }
@@ -1819,10 +1984,18 @@ namespace Bustrap
             File.Delete(Path.Combine(Paths.Base, "ModManifest.txt"));
             Directory.CreateDirectory(Paths.Mods);
 
+            // Each step gets its own try: these all ran inside one, so GitHub
+            // being unreachable or rate-limited (60 unauthenticated API calls an
+            // hour) while checking for a newer pack skipped applying the pack
+            // that was already on disk.
+            try { await ApplySkyboxPatchToRobloxStorageAsync(); }
+            catch (Exception ex) { App.Logger.WriteLine(LOG_IDENT, $"Skybox patch failed: {ex.Message}"); }
+
+            try { await EnsureSkyboxPackDownloadedAsync(); }
+            catch (Exception ex) { App.Logger.WriteLine(LOG_IDENT, $"Skybox pack update failed: {ex.Message}"); }
+
             try
             {
-                await ApplySkyboxPatchToRobloxStorageAsync();
-                await EnsureSkyboxPackDownloadedAsync();
                 await ApplySkyboxAsync(App.Settings.Prop.SkyboxName, Paths.Mods);
                 App.Logger.WriteLine(LOG_IDENT, "Skybox applied.");
             }
@@ -1887,7 +2060,11 @@ namespace Bustrap
             {
                 if (_cancelTokenSource.IsCancellationRequested) return;
                 var pkg = _versionPackageManifest.Find(x => x.Name == pkgName);
-                if (pkg is not null) { await DownloadPackage(pkg); ExtractPackage(pkg, files); }
+                if (pkg is not null)
+                {
+                    await DownloadPackage(pkg, _cancelTokenSource.Token);
+                    ExtractPackage(pkg, files);
+                }
             }
 
             App.State.Prop.ModManifest = modFolderFiles;
@@ -1953,9 +2130,12 @@ namespace Bustrap
 
         private async Task<string> GetLatestCommitShaAsync()
         {
+            // SkyboxHttpClient allows 30 minutes, which suits the pack download
+            // but not a version check that every launch waits on
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             using var req = new HttpRequestMessage(HttpMethod.Get, SkyboxCommitApiUrl);
             req.Headers.UserAgent.ParseAdd("SkyboxInstaller");
-            using var res = await SkyboxHttpClient.SendAsync(req);
+            using var res = await SkyboxHttpClient.SendAsync(req, timeout.Token);
             res.EnsureSuccessStatusCode();
             using var stream = await res.Content.ReadAsStreamAsync();
             using var doc = await System.Text.Json.JsonDocument.ParseAsync(stream);
@@ -2074,27 +2254,32 @@ namespace Bustrap
 
             const string githubBase = "https://raw.githubusercontent.com/KloBraticc/SkyboxPatch/main/assets/";
 
-            using var http = new HttpClient();
+            // This runs on every launch, in front of the user. The requests are
+            // independent, so they go out together rather than in sequence, on a
+            // short timeout so an unreachable GitHub cannot hold the launch up.
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
 
-            foreach (var (hash, folder) in SkyboxPatchFolderMap)
+            await Task.WhenAll(SkyboxPatchFolderMap.Select(async entry =>
             {
-                string dir = Path.Combine(rbxStorage, folder);
-                Directory.CreateDirectory(dir);
-                string dest = Path.Combine(dir, hash);
+                var (hash, folder) = entry;
 
                 try
                 {
-                    byte[] data = await http.GetByteArrayAsync(githubBase + hash);
+                    string dir = Path.Combine(rbxStorage, folder);
+                    Directory.CreateDirectory(dir);
+                    string dest = Path.Combine(dir, hash);
+
+                    byte[] data = await http.GetByteArrayAsync(githubBase + hash).ConfigureAwait(false);
                     if (File.Exists(dest))
                         File.SetAttributes(dest, FileAttributes.Normal);
-                    await File.WriteAllBytesAsync(dest, data);
+                    await File.WriteAllBytesAsync(dest, data).ConfigureAwait(false);
                     File.SetAttributes(dest, FileAttributes.ReadOnly);
                 }
                 catch (Exception ex)
                 {
                     App.Logger.WriteLine("SkyboxPatch", $"Failed {hash}: {ex.Message}");
                 }
-            }
+            })).ConfigureAwait(false);
         }
 
         private static string BytesToString(long bytes)

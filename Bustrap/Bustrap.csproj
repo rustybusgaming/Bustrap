@@ -38,7 +38,10 @@
         <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
         <TieredPGO>true</TieredPGO>
 
-        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <!-- Workstation GC. Server GC keeps a separate heap per logical core and
+             trades memory for throughput, which is the wrong way round for a
+             launcher that sits in the tray next to a game. -->
+        <ServerGarbageCollection>false</ServerGarbageCollection>
         <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
         <RetainVMGarbageCollection>false</RetainVMGarbageCollection>
 
