@@ -463,63 +463,15 @@ namespace Bustrap
 
             if (existingVer is not null)
             {
-                if (Utilities.CompareVersions(existingVer, "2.2.0") == VersionComparison.LessThan)
-                {
-                    string path = Path.Combine(Paths.Integrations, "rbxfpsunlocker");
-
-                    try
-                    {
-                        if (Directory.Exists(path))
-                            Directory.Delete(path, true);
-                    }
-                    catch (Exception ex)
-                    {
-                        App.Logger.WriteException(LOG_IDENT, ex);
-                    }
-                }
-
-                if (Utilities.CompareVersions(existingVer, "2.3.0") == VersionComparison.LessThan)
-                {
-                    string injectorLocation = Path.Combine(Paths.Mods, "dxgi.dll");
-                    string configLocation = Path.Combine(Paths.Mods, "ReShade.ini");
-
-                    if (File.Exists(injectorLocation))
-                        File.Delete(injectorLocation);
-
-                    if (File.Exists(configLocation))
-                        File.Delete(configLocation);
-                }
-
-
-                if (Utilities.CompareVersions(existingVer, "2.5.0") == VersionComparison.LessThan)
-                {
-                    App.FastFlags.SetValue("DFFlagDisableDPIScale", null);
-                    App.FastFlags.SetValue("DFFlagVariableDPIScale2", null);
-                }
-
-                if (Utilities.CompareVersions(existingVer, "2.6.0") == VersionComparison.LessThan)
-                {
-                    if (App.Settings.Prop.UseDisableAppPatch)
-                    {
-                        try
-                        {
-                            File.Delete(Path.Combine(Paths.Mods, "ExtraContent\\places\\Mobile.rbxl"));
-                        }
-                        catch (Exception ex)
-                        {
-                            App.Logger.WriteException(LOG_IDENT, ex);
-                        }
-
-                        App.Settings.Prop.EnableActivityTracking = true;
-                    }
-
-                    if (App.Settings.Prop.BootstrapperStyle == BootstrapperStyle.ClassicFluentDialog)
-                        App.Settings.Prop.BootstrapperStyle = BootstrapperStyle.FluentDialog;
-
-                    _ = int.TryParse(App.FastFlags.GetPreset("Rendering.Framerate"), out int x);
-                    if (x == 0)
-                        App.FastFlags.SetPreset("Rendering.Framerate", null);
-                }
+                // Migrations inherited from Bloxstrap used to sit here, gated on
+                // Bloxstrap's version numbers (2.2.0 through 2.8.3). Bustrap is
+                // numbered 1.x, so every one of those "older than 2.x" checks was
+                // true on every upgrade, and each upgrade re-ran all of them:
+                // Roblox was force-reinstalled, the Classic Fluent bootstrapper
+                // style was switched back to Fluent, dxgi.dll / ReShade.ini were
+                // deleted from the mods folder, and the DPI and in-game-menu
+                // fast flags were wiped. No Bustrap install was ever in the state
+                // they migrate from, so they are gone rather than re-gated.
 
                 if (Utilities.CompareVersions(existingVer, "1.0.3.6") == VersionComparison.LessThan)
                 {
@@ -563,45 +515,6 @@ namespace Bustrap
 
                     App.FastFlags.SetValue("FFlagDisableNewIGMinDUA", null);
                     App.FastFlags.SetValue("FFlagFixGraphicsQuality", null);
-                }
-
-                if (Utilities.CompareVersions(existingVer, "2.8.1") == VersionComparison.LessThan)
-                {
-                    // wipe all escape menu flag presets
-                    App.FastFlags.SetValue("FIntNewInGameMenuPercentRollout3", null);
-                    App.FastFlags.SetValue("FFlagEnableInGameMenuControls", null);
-                    App.FastFlags.SetValue("FFlagEnableInGameMenuModernization", null);
-                    App.FastFlags.SetValue("FFlagEnableInGameMenuChrome", null);
-                    App.FastFlags.SetValue("FFlagFixReportButtonCutOff", null);
-                    App.FastFlags.SetValue("FFlagEnableMenuControlsABTest", null);
-                    App.FastFlags.SetValue("FFlagEnableV3MenuABTest3", null);
-                    App.FastFlags.SetValue("FFlagEnableInGameMenuChromeABTest3", null);
-                    App.FastFlags.SetValue("FFlagEnableInGameMenuChromeABTest4", null);
-                }
-
-                if (Utilities.CompareVersions(existingVer, "2.8.2") == VersionComparison.LessThan)
-                {
-                    string robloxDirectory = Path.Combine(Paths.Base, "Roblox");
-
-                    if (Directory.Exists(robloxDirectory))
-                    {
-                        try
-                        {
-                            Directory.Delete(robloxDirectory, true);
-                        }
-                        catch (Exception ex)
-                        {
-                            App.Logger.WriteLine(LOG_IDENT, "Failed to delete the Roblox directory");
-                            App.Logger.WriteException(LOG_IDENT, ex);
-                        }
-                    }
-                }
-
-                if (Utilities.CompareVersions(existingVer, "2.8.3") == VersionComparison.LessThan)
-                {
-                    // force reinstallation
-                    App.State.Prop.Player.VersionGuid = "";
-                    App.State.Prop.Studio.VersionGuid = "";
                 }
 
                 App.Settings.Save();

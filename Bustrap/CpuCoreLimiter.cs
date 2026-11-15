@@ -7,6 +7,24 @@ namespace Bustrap
     public static class CpuCoreLimiter
     {
         /// <summary>
+        /// Affinity mask selecting the first <paramref name="coreCount"/> logical
+        /// processors.
+        ///
+        /// Written as a function because the obvious one-liner,
+        /// <c>(1L &lt;&lt; coreCount) - 1</c>, is wrong at 64: C# masks the shift
+        /// count to six bits, so <c>1L &lt;&lt; 64</c> is 1 and the mask comes out as
+        /// zero - which Windows rejects. A mask also only covers one processor
+        /// group, so anything from 64 up means "all of them".
+        /// </summary>
+        public static long AffinityMask(int coreCount)
+        {
+            if (coreCount < 1)
+                coreCount = 1;
+
+            return coreCount >= 64 ? -1L : (1L << coreCount) - 1;
+        }
+
+        /// <summary>
         /// Limits the current process to use only the specified number of CPU cores.
         /// </summary>
         /// <param name="coreCount">Number of CPU cores to allow (minimum 1, maximum number of logical processors).</param>
@@ -26,11 +44,7 @@ namespace Bustrap
 
             try
             {
-                long affinityMask = 0;
-                for (int i = 0; i < coreCount; i++)
-                {
-                    affinityMask |= 1L << i;
-                }
+                long affinityMask = AffinityMask(coreCount);
 
                 Process currentProcess = Process.GetCurrentProcess();
                 currentProcess.ProcessorAffinity = (IntPtr)affinityMask;

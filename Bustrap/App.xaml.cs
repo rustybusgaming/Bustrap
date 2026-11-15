@@ -25,9 +25,11 @@ namespace Bustrap
         public const string ProjectName = "Bustrap";
 #endif
         public const string ProjectOwner = "Bustrap";
-        public const string ProjectRepository = "/rustybusgaming/Bustrap/";
+        // no leading or trailing slash: every use already supplies its own, so
+        // the old "/owner/repo/" produced "repos//owner/repo//releases" URLs
+        public const string ProjectRepository = "rustybusgaming/Bustrap";
         public const string ProjectDownloadLink = "https://github.com/rustybusgaming/Bustrap/releases";
-        public const string ProjectHelpLink = "https://github.com/BloxstrapLabs/Bustrap/wiki";
+        public const string ProjectHelpLink = "https://github.com/bloxstraplabs/bloxstrap/wiki";
         public const string ProjectSupportLink = "https://github.com/rustybusgaming/Bustrap/issues/new";
 
         public const string RobloxPlayerAppName = "RobloxPlayerBeta";
@@ -432,31 +434,36 @@ namespace Bustrap
             _memoryTrimCts = new CancellationTokenSource();
             CancellationToken token = _memoryTrimCts.Token;
 
+            // This used to force three blocking full collections and write a log
+            // line every five seconds for as long as Discord RPC was connected -
+            // constant CPU and disk work in the background of a game, to save
+            // memory the collector would have reclaimed anyway. One compacting
+            // collection a minute keeps the footprint down without the churn.
             Task.Run(async () =>
             {
-                while (!token.IsCancellationRequested)
+                try
                 {
-                    try
+                    while (!token.IsCancellationRequested)
                     {
-                        if (DiscordClient != null)
+                        await Task.Delay(TimeSpan.FromMinutes(1), token);
+
+                        if (DiscordClient is null)
+                            continue;
+
+                        try
                         {
-                            GC.Collect();
-                            GC.WaitForPendingFinalizers();
-                            GC.Collect();
-#if NET5_0_OR_GREATER
                             System.Runtime.GCSettings.LargeObjectHeapCompactionMode =
                                 System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
-                            GC.Collect();
-#endif
-                            Logger.WriteLine("App::MemoryTrim", "Memory trimmed successfully (background).");
+                            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.WriteException("App::MemoryTrim", ex);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Logger.WriteException("App::MemoryTrim", ex);
-                    }
-
-                    await Task.Delay(TimeSpan.FromSeconds(5), token);
+                }
+                catch (OperationCanceledException)
+                {
                 }
             }, token);
         }

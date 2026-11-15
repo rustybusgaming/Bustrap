@@ -18,10 +18,8 @@ public static class RobloxMemoryCleaner
         IntPtr dwMinimumWorkingSetSize,
         IntPtr dwMaximumWorkingSetSize);
 
-    [DllImport("kernel32.dll")]
-    private static extern bool SetPriorityClass(
-        IntPtr hProcess,
-        uint dwPriorityClass);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
 
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern bool OpenProcessToken(
@@ -48,8 +46,6 @@ public static class RobloxMemoryCleaner
     private const uint TOKEN_QUERY = 0x8;
     private const uint SE_PRIVILEGE_ENABLED = 0x2;
 
-    private const uint BELOW_NORMAL_PRIORITY_CLASS = 0x00004000;
-
     [StructLayout(LayoutKind.Sequential)]
     private struct LUID
     {
@@ -75,55 +71,73 @@ public static class RobloxMemoryCleaner
         "RobloxStudioBeta"
     };
 
+    private static bool _debugPrivilegeRequested;
+
     public static void EnableDebugPrivilege()
     {
-        if (!OpenProcessToken(Process.GetCurrentProcess().Handle,
+        // once per process is enough, and each call used to leak a token handle
+        if (_debugPrivilegeRequested)
+            return;
+
+        _debugPrivilegeRequested = true;
+
+        using var self = Process.GetCurrentProcess();
+
+        if (!OpenProcessToken(self.Handle,
             TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
             out IntPtr token))
             return;
 
-        LookupPrivilegeValue(null, "SeDebugPrivilege", out LUID luid);
-
-        TOKEN_PRIVILEGES tp = new TOKEN_PRIVILEGES
+        try
         {
-            PrivilegeCount = 1,
-            Luid = luid,
-            Attributes = SE_PRIVILEGE_ENABLED
-        };
+            if (!LookupPrivilegeValue(null, "SeDebugPrivilege", out LUID luid))
+                return;
 
-        AdjustTokenPrivileges(token, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+            TOKEN_PRIVILEGES tp = new TOKEN_PRIVILEGES
+            {
+                PrivilegeCount = 1,
+                Luid = luid,
+                Attributes = SE_PRIVILEGE_ENABLED
+            };
+
+            AdjustTokenPrivileges(token, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero);
+        }
+        finally
+        {
+            CloseHandle(token);
+        }
     }
 
     public static void CleanAllRobloxMemory()
     {
         EnableDebugPrivilege();
 
-        var processes = Process.GetProcesses()
-            .Where(p => RobloxProcesses.Contains(p.ProcessName))
-            .ToArray();
-
-        if (processes.Length == 0)
-        {
-            // if no roblox just fuck it 🤘
-            return;
-        }
-
-        foreach (var proc in processes)
+        foreach (var proc in Utilities.GetProcessesSafe())
         {
             try
             {
+                if (!RobloxProcesses.Contains(proc.ProcessName))
+                    continue;
+
                 long before = proc.WorkingSet64;
 
+                // Trimming memory is all this does. It used to drop the process
+                // to below-normal priority as well, which slowed the game down
+                // and overrode the priority chosen in settings on every pass.
                 EmptyWorkingSet(proc.Handle);
                 SetProcessWorkingSetSize(proc.Handle, (IntPtr)(-1), (IntPtr)(-1));
-                SetPriorityClass(proc.Handle, BELOW_NORMAL_PRIORITY_CLASS);
 
                 proc.Refresh();
                 long after = proc.WorkingSet64;
 
-                Console.WriteLine(
-                    $"[{proc.ProcessName}:{proc.Id}] " +
-                    $"{FormatBytes(before)} → {FormatBytes(after)}");
+                App.Logger.WriteLine("RobloxMemoryCleaner",
+                    $"[{proc.ProcessName}:{proc.Id}] {FormatBytes(before)} -> {FormatBytes(after)}");
+            }
+            catch (Exception ex)
+            {
+                // A process can exit mid-pass, or refuse to hand out a handle.
+                // That used to abort the pass for every process after it.
+                App.Logger.WriteLine("RobloxMemoryCleaner", $"Skipped a process: {ex.Message}");
             }
             finally
             {

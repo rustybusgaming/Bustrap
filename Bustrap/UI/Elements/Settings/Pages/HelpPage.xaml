@@ -33,7 +33,7 @@
                     <controls:MarkdownTextBlock MarkdownText="[Black Textures](https://devforum.roblox.com/t/texture-slow-loading-not-loading-at-all-and-result-in-grey-blank-character-constantly/2338035)" Margin="0,0,0,4" />
                     <controls:MarkdownTextBlock MarkdownText="[Rainbow UI Textures](https://devforum.roblox.com/t/texture-slow-loading-not-loading-at-all-and-result-in-grey-blank-character-constantly/2338035)" Margin="0,0,0,4" />
                     <controls:MarkdownTextBlock MarkdownText="[Loading Issues](https://devforum.roblox.com/t/everything-loads-extremely-slow/3789261)" Margin="0,0,0,4" />
-                    <controls:MarkdownTextBlock MarkdownText="[FPS Capped When Uncapped](https://github.com/BloxstrapLabs/Bustrap/issues/2447)" Margin="0,0,0,4" />
+                    <controls:MarkdownTextBlock MarkdownText="[FPS Capped When Uncapped](https://github.com/bloxstraplabs/bloxstrap/issues/2447)" Margin="0,0,0,4" />
                     <controls:MarkdownTextBlock MarkdownText="[Quality Level Not Changing](https://devforum.roblox.com/t/roblox-settings-ui-quality-is-affected-by-game-graphics-bar-slider/3064536)" Margin="0,0,0,4" />
                     <controls:MarkdownTextBlock MarkdownText="[Black Sky](https://devforum.roblox.com/t/texture-slow-loading-not-loading-at-all-and-result-in-grey-blank-character-constantly/2338035)" Margin="0,0,0,4" />
                     <controls:MarkdownTextBlock MarkdownText="[Roblox Crashing](https://devforum.roblox.com/t/texture-slow-loading-not-loading-at-all-and-result-in-grey-blank-character-constantly/2338035)" Margin="0,0,0,4" />

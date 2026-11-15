@@ -56,8 +56,6 @@ namespace Bustrap
 
         public static Version? GetVersionFromString(string? version)
         {
-            var logger = new Logger();
-
             if (string.IsNullOrWhiteSpace(version))
                 return null;
 
@@ -94,7 +92,9 @@ namespace Bustrap
             }
             catch (Exception ex)
             {
-                logger.WriteLine("App::GetVersionFromString", $"Invalid version string '{version}': {ex.Message}");
+                // this went to a throwaway Logger that was never attached to a
+                // file, so the message was lost
+                App.Logger.WriteLine("Utilities::GetVersionFromString", $"Invalid version string '{version}': {ex.Message}");
                 return null;
             }
         }
@@ -125,7 +125,7 @@ namespace Bustrap
             catch (Exception)
             {
                 // temporary diagnostic log for the issue described here:
-                // https://github.com/BloxstrapLabs/Bustrap/issues/3193
+                // https://github.com/bloxstraplabs/bloxstrap/issues/3193
                 // the problem is that this happens only on upgrade, so my only hope of catching this is bug reports following the next release
 
                 App.Logger.WriteLine("Utilities::CompareVersions", "An exception occurred when comparing versions");

@@ -21,13 +21,15 @@ dotnet run --project .\Bustrap\Bustrap.csproj
 
 Test/lint status in this repo:
 
-- There are currently no test projects (`*Test*.csproj`) in this repository, so `dotnet test` has no runnable targets.
-- There is no repository-level lint command configured for the main project.
-- If tests are added later, run one test with:
+- Unit tests live in `Bustrap.Tests` (xUnit) and run in CI on Windows:
 
 ```powershell
-dotnet test <test-project>.csproj --filter "FullyQualifiedName~<TestName>"
+dotnet test .\Bustrap.Tests\Bustrap.Tests.csproj
+dotnet test .\Bustrap.Tests\Bustrap.Tests.csproj --filter "FullyQualifiedName~<TestName>"
 ```
+
+- The test project targets the same Windows TFM as the app, so tests only run on Windows. The solution does compile on Linux/macOS with `-p:EnableWindowsTargeting=true`, which is enough to check that a change builds.
+- There is no repository-level lint command configured for the main project.
 
 ## High-level architecture
 
